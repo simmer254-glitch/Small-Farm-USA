@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#e5e2d8;font-family:'Public Sans',system-ui,sans-serif}a{color:#5a6b3b;text-decoration:none}a:hover{color:#3e4a29}input,select,textarea{font-family:'Public Sans',system-ui,sans-serif}::-webkit-scrollbar{width:0;height:0}</style>
+</helmet>
+<div style="display:flex;justify-content:center;padding:28px 12px;min-height:100vh;box-sizing:border-box">
+<div style="width:390px;height:800px;background:#faf8f2;border-radius:28px;box-shadow:0 8px 40px rgba(44,51,32,.25);overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+<div style="flex:1;overflow-y:auto;overflow-x:hidden">
+
+<!-- ================= HOME ================= -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="padding:44px 22px 90px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320;letter-spacing:-.3px">Good morning, Simmons Family</div>
+      <div style="font-size:12.5px;color:#8a8672;margin-top:3px">Jul 17 · {{ totalHead }} animals · {{ roleLabel }}</div>
+    </div>
+    <div style="width:40px;height:40px;border-radius:12px;background:#5a6b3b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff">SF</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:18px">
+    <div onClick="{{ goCattle }}" style="background:#eceadd;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;color:#4a4636;cursor:pointer">🐄 {{ nCattle }}</div>
+    <div onClick="{{ goPigs }}" style="background:#eceadd;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;color:#4a4636;cursor:pointer">🐖 {{ nPigs }}</div>
+    <div onClick="{{ goChickens }}" style="background:#eceadd;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;color:#4a4636;cursor:pointer">🐔 {{ nChickens }}</div>
+    <div onClick="{{ goAdd }}" style="background:#eceadd;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;color:#8a8672;cursor:pointer">+ Add</div>
+  </div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:22px 0 10px">Needs attention</div>
+  <sc-if value="{{ hasAttention }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ attention }}" as="s" hint-placeholder-count="2">
+      <div onClick="{{ s.go }}" style="padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0eee4;cursor:pointer" style-hover="background:#faf8f2">
+        <div style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;background:{{ s.bg }}">{{ s.icon }}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px;color:#2c3320">{{ s.title }}</div><div style="font-size:12px;color:#8a8672">{{ s.sub }}</div></div>
+        <div style="color:#c2beac">›</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noAttention }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:22px;text-align:center">
+    <div style="font-size:24px">🌤</div>
+    <div style="font-weight:700;font-size:13.5px;color:#2c3320;margin-top:8px">All caught up</div>
+    <div style="font-size:12px;color:#8a8672;margin-top:3px">Add animals, equipment, or calendar tasks and suggestions will show up here.</div>
+  </div>
+  </sc-if>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 0 10px">
+    <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px">Markets</div>
+    <div onClick="{{ goMarkets }}" style="font-size:12px;color:#5a6b3b;font-weight:600;cursor:pointer;white-space:nowrap">{{ auctionName }} ▾</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <sc-for list="{{ homeQuotes }}" as="q" hint-placeholder-count="3">
+      <div onClick="{{ goMarkets }}" style="flex:1;min-width:0;background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:12px 10px;cursor:pointer">
+        <div style="font-size:10.5px;color:#8a8672;font-weight:600;white-space:nowrap">{{ q.label }}</div>
+        <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:#2c3320;margin-top:4px">{{ q.price }}</div>
+        <div style="font-size:11px;font-weight:700;margin-top:2px;color:{{ q.dirColor }}">{{ q.delta }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 0 10px">
+    <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px">This year so far</div>
+    <div onClick="{{ goMoney }}" style="font-size:12px;color:#5a6b3b;font-weight:600;cursor:pointer">Schedule F ›</div>
+  </div>
+  <div onClick="{{ goMoney }}" style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:14px 16px;display:flex;gap:14px;cursor:pointer">
+    <div style="flex:1"><div style="font-size:11px;color:#8a8672;font-weight:600">Income</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:#2c3320">{{ ytdIncome }}</div></div>
+    <div style="flex:1"><div style="font-size:11px;color:#8a8672;font-weight:600">Expenses</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:#2c3320">{{ ytdExpense }}</div></div>
+    <div style="flex:1"><div style="font-size:11px;color:#8a8672;font-weight:600">Net</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:{{ netColor }}">{{ ytdNet }}</div></div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= KID HOME ================= -->
+<sc-if value="{{ isKidHome }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 30px">
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:24px;color:#2c3320">Hi, helper! 👋</div>
+  <div style="font-size:13px;color:#8a8672;margin-top:3px">Tap a button when you finish a chore</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+    <sc-for list="{{ kidChoreOpts }}" as="k" hint-placeholder-count="4">
+      <div onClick="{{ k.go }}" style="background:#fff;border-radius:20px;box-shadow:0 2px 8px rgba(44,51,32,.10);padding:22px 12px;text-align:center;cursor:pointer" style-hover="background:#f0f3e6">
+        <div style="font-size:34px">{{ k.icon }}</div>
+        <div style="font-weight:800;font-size:14px;color:#2c3320;margin-top:8px;font-family:'Archivo',sans-serif">{{ k.label }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ hasChores }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#e3ecd7;border-radius:16px;padding:14px 16px;margin-top:16px;text-align:center;font-weight:800;font-size:14px;color:#3e4a29;font-family:'Archivo',sans-serif">⭐ {{ choresToday }} done today — great work!</div>
+  </sc-if>
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px">My tasks</div>
+  <sc-if value="{{ hasKidTasks }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ kidTasks }}" as="t" hint-placeholder-count="2">
+      <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0eee4">
+        <div onClick="{{ t.toggle }}" style="width:28px;height:28px;border-radius:9px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;border:2px solid {{ t.boxBorder }};background:{{ t.boxBg }}">{{ t.check }}</div>
+        <div style="width:32px;height:32px;border-radius:9px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none">{{ t.icon }}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;color:{{ t.titleColor }};text-decoration:{{ t.deco }}">{{ t.title }}</div><div style="font-size:11.5px;color:#8a8672">{{ t.when }}</div></div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noKidTasks }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:24px;text-align:center;font-size:13px;color:#8a8672">No tasks for you today 🎉</div>
+  </sc-if>
+  <div style="font-size:11px;color:#b3af9d;margin-top:14px;text-align:center">Kid mode — switch back in More › Your role</div>
+</div>
+</sc-if>
+
+<!-- ================= ANIMALS ================= -->
+<sc-if value="{{ isAnimals }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">Animals</div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+    <sc-for list="{{ speciesFilters }}" as="f" hint-placeholder-count="4">
+      <div onClick="{{ f.pick }}" style="border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;background:{{ f.bg }};color:{{ f.fg }}">{{ f.label }}</div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ hasAnimals }}" hint-placeholder-val="{{ false }}">
+  <div style="margin-top:12px;background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(44,51,32,.08);display:flex;align-items:center;padding:0 14px">
+    <span style="color:#b3af9d;font-size:14px">⌕</span>
+    <input value="{{ search }}" onChange="{{ setSearch }}" placeholder="Search tag, name, or dam…" style="flex:1;border:none;outline:none;background:transparent;padding:12px 10px;font-size:13.5px;color:#2c3320">
+  </div>
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden;margin-top:14px">
+    <sc-for list="{{ filteredAnimals }}" as="a" hint-placeholder-count="4">
+      <div onClick="{{ a.open }}" style="padding:13px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0eee4;cursor:pointer" style-hover="background:#faf8f2">
+        <div style="width:40px;height:40px;border-radius:12px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">{{ a.emoji }}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13.5px;color:#2c3320">{{ a.title }}</div>
+          <div style="font-size:11.5px;color:#8a8672;margin-top:1px">{{ a.sub }}</div>
+        </div>
+        <div style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;flex:none;background:{{ a.badgeBg }};color:{{ a.badgeFg }}">{{ a.badge }}</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noAnimals }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:32px 22px;text-align:center;margin-top:16px">
+    <div style="font-size:32px">🐄</div>
+    <div style="font-weight:700;font-size:14px;color:#2c3320;margin-top:10px">No animals yet</div>
+    <div style="font-size:12.5px;color:#8a8672;margin-top:4px">Add your first animal — a calf, a whole flock, or the cows you already have.</div>
+  </div>
+  </sc-if>
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px">Pets &amp; working animals</div>
+  <sc-if value="{{ hasPets }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#f3f6fa;border:1px solid #dde6f0;border-radius:16px;overflow:hidden">
+    <sc-for list="{{ petList }}" as="p" hint-placeholder-count="2">
+      <div onClick="{{ p.open }}" style="padding:13px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #e6edf5;cursor:pointer">
+        <div style="width:40px;height:40px;border-radius:12px;background:#e2eaf4;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">{{ p.emoji }}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13.5px;color:#22436b">{{ p.title }}</div>
+          <div style="font-size:11.5px;color:#5b789c;margin-top:1px">{{ p.sub }}</div>
+        </div>
+        <div style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:#e2eaf4;color:#2a63a8;flex:none">Pet</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noPets }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#f3f6fa;border:1px dashed #c9d8e8;border-radius:16px;padding:16px;text-align:center;font-size:12px;color:#5b789c">Dogs, barn cats, horses — kept separate from livestock. Add one via "+ New animal" › Pet / working.</div>
+  </sc-if>
+  <div onClick="{{ goAdd }}" style="background:#5a6b3b;color:#fff;border-radius:16px;padding:15px;text-align:center;font-weight:700;font-size:14px;font-family:'Archivo',sans-serif;margin-top:16px;cursor:pointer" style-hover="background:#4c5b31">+ New animal</div>
+</div>
+</sc-if>
+
+<!-- ================= ANIMAL DETAIL ================= -->
+<sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div onClick="{{ goAnimals }}" style="font-size:13px;color:#5a6b3b;font-weight:600;cursor:pointer;margin-bottom:12px">‹ All animals</div>
+  <div style="background:#fff;border-radius:18px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:18px">
+    <div style="display:flex;gap:14px;align-items:center">
+      <div style="width:64px;height:64px;border-radius:16px;background:repeating-linear-gradient(45deg,#eceadd,#eceadd 6px,#e2dfd0 6px,#e2dfd0 12px);display:flex;align-items:center;justify-content:center;font-size:26px;flex:none">{{ det.emoji }}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:19px;color:#2c3320">{{ det.title }}</div>
+        <div style="font-size:12.5px;color:#8a8672;margin-top:2px">{{ det.subtitle }}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px">
+      <div style="background:#faf8f2;border-radius:12px;padding:10px"><div style="font-size:10.5px;color:#8a8672;font-weight:600">Age</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;color:#2c3320">{{ det.age }}</div></div>
+      <div style="background:#faf8f2;border-radius:12px;padding:10px"><div style="font-size:10.5px;color:#8a8672;font-weight:600">Last weighed</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;color:#2c3320">{{ det.weight }}</div></div>
+      <div style="background:#faf8f2;border-radius:12px;padding:10px"><div style="font-size:10.5px;color:#8a8672;font-weight:600">Color</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;color:#2c3320">{{ det.color }}</div></div>
+    </div>
+  </div>
+  <sc-if value="{{ det.hasSuggestion }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#f0f3e6;border:1px solid #d5ddbf;border-radius:16px;padding:14px 16px;margin-top:12px;display:flex;gap:12px">
+    <div style="font-size:16px">💡</div>
+    <div style="flex:1"><div style="font-weight:700;font-size:13px;color:#3e4a29">{{ det.suggestionTitle }}</div><div style="font-size:12px;color:#5f6b47;margin-top:2px">{{ det.suggestionBody }}</div></div>
+  </div>
+  </sc-if>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <sc-for list="{{ logButtons }}" as="b" hint-placeholder-count="3">
+      <div onClick="{{ b.pick }}" style="flex:1;border-radius:12px;padding:11px 4px;text-align:center;font-weight:700;font-size:12.5px;cursor:pointer;border:1.5px solid #5a6b3b;background:{{ b.bg }};color:{{ b.fg }}">{{ b.label }}</div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ logOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:12px;margin-top:10px;display:flex;gap:8px">
+    <input value="{{ logVal }}" onChange="{{ logChange }}" placeholder="{{ logPlaceholder }}" style="flex:1;border:1px solid #ddd9c8;border-radius:10px;padding:11px 13px;font-size:14px;background:#faf8f2;outline-color:#5a6b3b">
+    <div onClick="{{ logSave }}" style="background:#5a6b3b;color:#fff;border-radius:10px;padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center">Save</div>
+  </div>
+  </sc-if>
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px">Life record</div>
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:6px 16px">
+    <sc-for list="{{ detEvents }}" as="e" hint-placeholder-count="3">
+      <div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #f0eee4">
+        <div style="width:30px;height:30px;border-radius:9px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none">{{ e.icon }}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;color:#2c3320">{{ e.title }}</div><div style="font-size:11.5px;color:#8a8672">{{ e.date }} · {{ e.by }}</div></div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ detIsLivestock }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <div onClick="{{ det.markSold }}" style="flex:1;background:#5a6b3b;color:#fff;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px;cursor:pointer">Mark sold</div>
+    <div onClick="{{ det.markButchered }}" style="flex:1;background:#7a4a2e;color:#fff;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px;cursor:pointer">Mark butchered</div>
+  </div>
+  <sc-if value="{{ sellOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:12px;margin-top:10px">
+    <div style="display:flex;gap:8px">
+      <input value="{{ sellBuyer }}" onChange="{{ sellBuyerChange }}" placeholder="Buyer, e.g. Sterling Livestock" style="flex:1;border:1px solid #ddd9c8;border-radius:10px;padding:11px 13px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+      <input value="{{ sellPrice }}" onChange="{{ sellPriceChange }}" type="number" placeholder="Price $" style="width:90px;border:1px solid #ddd9c8;border-radius:10px;padding:11px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+    </div>
+    <div onClick="{{ sellConfirm }}" style="background:#5a6b3b;color:#fff;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:12.5px;cursor:pointer;margin-top:8px">Confirm sale — logs the income entry too</div>
+  </div>
+  </sc-if>
+  </sc-if>
+  <sc-if value="{{ detIsPet }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#f3f6fa;border:1px solid #dde6f0;border-radius:14px;padding:12px 16px;margin-top:16px;text-align:center;font-size:12px;color:#5b789c;font-weight:600">🐾 Pet / working animal — never sold or eaten. No lifecycle tracking.</div>
+  </sc-if>
+  <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ det.remove }}" style="margin-top:10px;text-align:center;font-size:12.5px;font-weight:700;color:#a3401e;cursor:pointer;padding:10px">Delete record (admin)</div>
+  </sc-if>
+  <sc-if value="{{ notAdmin }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:10px;text-align:center;font-size:11.5px;color:#b3af9d;padding:10px">Only an admin can delete records</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ================= ADD ANIMAL ================= -->
+<sc-if value="{{ isAdd }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div onClick="{{ goAnimals }}" style="font-size:13px;color:#5a6b3b;font-weight:600;cursor:pointer;margin-bottom:12px">‹ Cancel</div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">New animal</div>
+  <div style="font-size:12.5px;color:#8a8672;margin-top:3px">Big buttons — easy one-handed at the barn.</div>
+  <div style="font-size:12px;font-weight:700;color:#8a8672;margin:18px 0 8px">TYPE</div>
+  <div style="display:flex;gap:8px">
+    <sc-for list="{{ nbClsOpts }}" as="o" hint-placeholder-count="2">
+      <div onClick="{{ o.pick }}" style="flex:1;border-radius:14px;padding:13px 4px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;border:1.5px solid {{ o.border }};background:{{ o.bg }};color:#2c3320">{{ o.label }}</div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ nbIsLivestock }}" hint-placeholder-val="{{ true }}">
+  <div style="font-size:12px;font-weight:700;color:#8a8672;margin:16px 0 8px">SPECIES</div>
+  <div style="display:flex;gap:8px">
+    <sc-for list="{{ nbSpeciesOpts }}" as="o" hint-placeholder-count="3">
+      <div onClick="{{ o.pick }}" style="flex:1;border-radius:14px;padding:14px 6px;text-align:center;cursor:pointer;border:1.5px solid {{ o.border }};background:{{ o.bg }}">
+        <div style="font-size:22px">{{ o.emoji }}</div><div style="font-size:12px;font-weight:700;color:#2c3320;margin-top:4px">{{ o.label }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="font-size:12px;font-weight:700;color:#8a8672;margin:16px 0 8px">SEX</div>
+  <div style="display:flex;gap:8px">
+    <sc-for list="{{ nbSexOpts }}" as="o" hint-placeholder-count="3">
+      <div onClick="{{ o.pick }}" style="flex:1;border-radius:14px;padding:13px 4px;text-align:center;cursor:pointer;font-weight:700;font-size:13px;border:1.5px solid {{ o.border }};background:{{ o.bg }};color:#2c3320">{{ o.label }}</div>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">TAG #</div><input name="tag" value="{{ nb.tag }}" onChange="{{ nbChange }}" placeholder="e.g. 214" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">NAME (OPTIONAL)</div><input name="name" value="{{ nb.name }}" onChange="{{ nbChange }}" placeholder="e.g. Daisy" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">BORN</div><input name="born" type="date" value="{{ nb.born }}" onChange="{{ nbChange }}" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:12px;font-size:14px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">BIRTH WEIGHT (LB, OPT.)</div><input name="weight" type="number" value="{{ nb.weight }}" onChange="{{ nbChange }}" placeholder="75" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">COLOR / MARKINGS</div><input name="color" value="{{ nb.color }}" onChange="{{ nbChange }}" placeholder="Black, white face" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">DAM (MOTHER)</div><input name="dam" value="{{ nb.dam }}" onChange="{{ nbChange }}" placeholder="Tag # of dam" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">COUNT (LOT/BATCH, OPT.)</div><input name="count" type="number" value="{{ nb.count }}" onChange="{{ nbChange }}" placeholder="1" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+  </div>
+  <div style="font-size:11.5px;color:#8a8672;margin-top:10px">For chick batches or pig litters, set a count and one tag covers the whole lot.</div>
+  </sc-if>
+  <sc-if value="{{ nbIsPet }}" hint-placeholder-val="{{ false }}">
+  <div style="font-size:12px;font-weight:700;color:#8a8672;margin:16px 0 8px">SPECIES</div>
+  <div style="display:flex;gap:8px">
+    <sc-for list="{{ nbPetSpeciesOpts }}" as="o" hint-placeholder-count="3">
+      <div onClick="{{ o.pick }}" style="flex:1;border-radius:14px;padding:14px 6px;text-align:center;cursor:pointer;border:1.5px solid {{ o.border }};background:{{ o.bg }}">
+        <div style="font-size:22px">{{ o.emoji }}</div><div style="font-size:12px;font-weight:700;color:#2c3320;margin-top:4px">{{ o.label }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+    <div style="grid-column:1/3"><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">NAME</div><input name="name" value="{{ nb.name }}" onChange="{{ nbChange }}" placeholder="e.g. Blue" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">BORN (APPROX. OK)</div><input name="born" type="date" value="{{ nb.born }}" onChange="{{ nbChange }}" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:12px;font-size:14px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">COLOR / BREED</div><input name="color" value="{{ nb.color }}" onChange="{{ nbChange }}" placeholder="Blue heeler" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+  </div>
+  <div style="font-size:11.5px;color:#5b789c;margin-top:10px">🐾 Pets &amp; working animals get a light profile — no tags, lots, or sale tracking.</div>
+  </sc-if>
+  <div onClick="{{ nbSave }}" style="background:#5a6b3b;color:#fff;border-radius:16px;padding:16px;text-align:center;font-weight:700;font-size:15px;font-family:'Archivo',sans-serif;margin-top:20px;cursor:pointer" style-hover="background:#4c5b31">Save animal</div>
+  <sc-if value="{{ nbSaved }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;font-size:13px;color:#4a7a2e;font-weight:700;margin-top:10px">✓ Saved — added to the herd list</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ================= CALENDAR ================= -->
+<sc-if value="{{ isCalendar }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">Calendar</div>
+  <div style="font-size:12.5px;color:#8a8672;margin-top:3px">Anyone can add a task, assign it, and send a calendar invite (.ics).</div>
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:14px;margin-top:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div onClick="{{ calPrev }}" style="width:30px;height:30px;border-radius:9px;background:#eceadd;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;color:#4a4636">‹</div>
+      <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;color:#2c3320">{{ calTitle }}</div>
+      <div onClick="{{ calNext }}" style="width:30px;height:30px;border-radius:9px;background:#eceadd;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;color:#4a4636">›</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:10px;font-weight:700;color:#b3af9d;margin-bottom:4px"><div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div></div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+      <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+        <div onClick="{{ c.pick }}" style="height:38px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:{{ c.bg }}">
+          <div style="font-size:12px;font-weight:{{ c.w }};color:{{ c.fg }}">{{ c.d }}</div>
+          <sc-if value="{{ c.dot }}" hint-placeholder-val="{{ false }}"><div style="width:5px;height:5px;border-radius:50%;background:#a35422;margin-top:2px"></div></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin:18px 0 10px">
+    <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px">Upcoming</div>
+    <div onClick="{{ taskFormToggle }}" style="font-size:12px;color:#5a6b3b;font-weight:700;cursor:pointer">+ Add task</div>
+  </div>
+  <sc-if value="{{ showTaskForm }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:14px;margin-bottom:12px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <sc-for list="{{ taskTypeOpts }}" as="o" hint-placeholder-count="4">
+        <div onClick="{{ o.pick }}" style="border-radius:18px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <div style="font-size:11px;font-weight:700;color:#8a8672">FOR</div>
+      <sc-for list="{{ assigneeOpts }}" as="o" hint-placeholder-count="4">
+        <div onClick="{{ o.pick }}" style="border-radius:18px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input name="title" value="{{ taskForm.title }}" onChange="{{ taskChange }}" placeholder="e.g. Butcher pigs P-14, P-15" style="flex:1;border:1px solid #ddd9c8;border-radius:10px;padding:11px 13px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+      <input name="date" type="date" value="{{ taskForm.date }}" onChange="{{ taskChange }}" style="width:130px;border:1px solid #ddd9c8;border-radius:10px;padding:10px;font-size:12px;background:#faf8f2;outline-color:#5a6b3b">
+    </div>
+    <div onClick="{{ taskSave }}" style="background:#5a6b3b;color:#fff;border-radius:12px;padding:12px;text-align:center;font-weight:700;font-size:13px;cursor:pointer;margin-top:10px">Add to calendar</div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ hasTasks }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ taskList }}" as="t" hint-placeholder-count="3">
+      <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0eee4">
+        <div onClick="{{ t.toggle }}" style="width:22px;height:22px;border-radius:7px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;border:1.5px solid {{ t.boxBorder }};background:{{ t.boxBg }}">{{ t.check }}</div>
+        <div style="width:30px;height:30px;border-radius:9px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none">{{ t.icon }}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;color:{{ t.titleColor }};text-decoration:{{ t.deco }}">{{ t.title }}</div><div style="font-size:11.5px;color:#8a8672">{{ t.when }} · for {{ t.assignee }} · by {{ t.by }}</div></div>
+        <div onClick="{{ t.invite }}" style="font-size:10.5px;color:#5a6b3b;font-weight:700;cursor:pointer;padding:5px 8px;border:1.5px solid #5a6b3b;border-radius:9px;flex:none;white-space:nowrap">📆 Invite</div>
+        <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}"><div onClick="{{ t.remove }}" style="color:#c2beac;cursor:pointer;font-size:15px;padding:4px">✕</div></sc-if>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noTasks }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:28px 22px;text-align:center">
+    <div style="font-size:28px">📅</div>
+    <div style="font-weight:700;font-size:13.5px;color:#2c3320;margin-top:8px">Nothing scheduled</div>
+    <div style="font-size:12px;color:#8a8672;margin-top:3px">Tap a date or "+ Add task" to schedule a butcher date, service, or vaccination.</div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ================= MARKETS ================= -->
+<sc-if value="{{ isMarkets }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div onClick="{{ goHome }}" style="font-size:13px;color:#5a6b3b;font-weight:600;cursor:pointer;margin-bottom:12px">‹ Home</div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">Markets</div>
+  <div style="font-size:12.5px;color:#8a8672;margin-top:3px">USDA AMS reports · pick the barns you follow</div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+    <sc-for list="{{ auctionOpts }}" as="o" hint-placeholder-count="4">
+      <div onClick="{{ o.pick }}" style="border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</div>
+    </sc-for>
+  </div>
+  <div style="font-size:12px;color:#8a8672;margin:16px 0 8px">{{ auctionName }} · {{ auctionMeta }}</div>
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ quotes }}" as="q" hint-placeholder-count="6">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid #f0eee4">
+        <div><div style="font-weight:600;font-size:13.5px;color:#2c3320">{{ q.label }}</div><div style="font-size:11.5px;color:#8a8672">{{ q.note }}</div></div>
+        <div style="text-align:right"><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;color:#2c3320">{{ q.price }}</div><div style="font-size:11px;font-weight:700;color:{{ q.dirColor }}">{{ q.delta }}</div></div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="font-size:11px;color:#b3af9d;margin-top:10px">Sample data for design. Real app pulls free USDA AMS auction reports for your selected barns.</div>
+</div>
+</sc-if>
+
+<!-- ================= MONEY ================= -->
+<sc-if value="{{ isMoney }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div onClick="{{ goMore }}" style="font-size:13px;color:#5a6b3b;font-weight:600;cursor:pointer;margin-bottom:12px">‹ More</div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">Money</div>
+  <div style="font-size:12.5px;color:#8a8672;margin-top:3px">Every entry maps to a Schedule F line for tax time</div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+    <sc-for list="{{ moneyBizOpts }}" as="o" hint-placeholder-count="5">
+      <div onClick="{{ o.pick }}" style="border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</div>
+    </sc-for>
+  </div>
+  <div style="background:#2c3320;border-radius:18px;padding:16px 18px;margin-top:12px;color:#fff">
+    <div style="display:flex;gap:14px">
+      <div style="flex:1"><div style="font-size:11px;color:#a8ad94;font-weight:600">Income YTD</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:19px">{{ mbIncome }}</div></div>
+      <div style="flex:1"><div style="font-size:11px;color:#a8ad94;font-weight:600">Expenses YTD</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:19px">{{ mbExpense }}</div></div>
+      <div style="flex:1"><div style="font-size:11px;color:#a8ad94;font-weight:600">Net</div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:19px;color:{{ mbNetColor }}">{{ mbNet }}</div></div>
+    </div>
+    <div style="font-size:11px;color:#8a9478;margin-top:10px">Tax year 2026 · {{ moneyBizLabel }} view · full exports in Reports &amp; audit</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <div onClick="{{ goAddExpense }}" style="flex:1;background:#5a6b3b;color:#fff;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px;cursor:pointer">+ Expense</div>
+    <div onClick="{{ goAddIncome }}" style="flex:1;background:#fff;border:1.5px solid #5a6b3b;color:#5a6b3b;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px;cursor:pointer">+ Income</div>
+  </div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px">Entries</div>
+  <sc-if value="{{ hasTxns }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ txns }}" as="t" hint-placeholder-count="3">
+      <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0eee4">
+        <div style="width:34px;height:34px;border-radius:10px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:14px;flex:none">{{ t.icon }}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;color:#2c3320">{{ t.desc }}</div>
+          <div style="font-size:11px;color:#8a8672;margin-top:1px">{{ t.date }} · <span style="color:#5a6b3b;font-weight:600">{{ t.line }}</span>{{ t.receiptNote }}</div>
+        </div>
+        <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;flex:none;color:{{ t.amtColor }}">{{ t.amt }}</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noTxns }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:28px 22px;text-align:center">
+    <div style="font-size:28px">🧾</div>
+    <div style="font-weight:700;font-size:13.5px;color:#2c3320;margin-top:8px">No entries yet</div>
+    <div style="font-size:12px;color:#8a8672;margin-top:3px">Add your first expense or income — snap the receipt and it files itself in Docs.</div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ================= ADD TRANSACTION ================= -->
+<sc-if value="{{ isAddTxn }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div onClick="{{ goMoney }}" style="font-size:13px;color:#5a6b3b;font-weight:600;cursor:pointer;margin-bottom:12px">‹ Cancel</div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">{{ txnTitle }}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+    <div style="grid-column:1/3"><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">DESCRIPTION</div><input name="desc" value="{{ txn.desc }}" onChange="{{ txnChange }}" placeholder="e.g. Feed — creep pellets" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">AMOUNT ($)</div><input name="amount" type="number" value="{{ txn.amount }}" onChange="{{ txnChange }}" placeholder="0.00" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:15px;background:#fff;outline-color:#5a6b3b"></div>
+    <div><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">DATE</div><input name="date" type="date" value="{{ txn.date }}" onChange="{{ txnChange }}" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:12px;font-size:14px;background:#fff;outline-color:#5a6b3b"></div>
+    <div style="grid-column:1/3"><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">BUSINESS</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <sc-for list="{{ txnBizOpts }}" as="o" hint-placeholder-count="4"><div onClick="{{ o.pick }}" style="border-radius:18px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</div></sc-for>
+      </div>
+    </div>
+    <div style="grid-column:1/3"><div style="font-size:12px;font-weight:700;color:#8a8672;margin-bottom:6px">SCHEDULE F CATEGORY</div>
+      <select name="line" value="{{ txn.line }}" onChange="{{ txnChange }}" style="width:100%;box-sizing:border-box;border:1px solid #ddd9c8;border-radius:12px;padding:13px;font-size:14px;background:#fff;outline-color:#5a6b3b;color:#2c3320">
+        <sc-for list="{{ txnLineOpts }}" as="o" hint-placeholder-count="6"><option value="{{ o }}">{{ o }}</option></sc-for>
+      </select>
+    </div>
+  </div>
+  <div onClick="{{ txnReceiptToggle }}" style="margin-top:12px;border-radius:14px;padding:16px;text-align:center;cursor:pointer;border:2px dashed {{ receiptBorder }};background:{{ receiptBg }}">
+    <div style="font-size:20px">📷</div>
+    <div style="font-weight:700;font-size:13px;margin-top:4px;color:{{ receiptFg }}">{{ receiptLabel }}</div>
+    <div style="font-size:11.5px;color:#8a8672;margin-top:2px">Receipt photos file automatically into Docs › Receipts</div>
+  </div>
+  <div onClick="{{ txnSave }}" style="background:#5a6b3b;color:#fff;border-radius:16px;padding:16px;text-align:center;font-weight:700;font-size:15px;font-family:'Archivo',sans-serif;margin-top:16px;cursor:pointer" style-hover="background:#4c5b31">Save entry</div>
+</div>
+</sc-if>
+
+<!-- ================= DOCS ================= -->
+<sc-if value="{{ isDocs }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">Farm documents</div>
+  <div style="display:flex;gap:10px;align-items:center;background:#e8eef5;border:1px solid #cdd9e6;border-radius:14px;padding:12px 14px;margin-top:14px">
+    <div style="width:30px;height:30px;border-radius:8px;background:#2a63a8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none">OD</div>
+    <div style="flex:1"><div style="font-weight:700;font-size:12.5px;color:#22436b">Backed up to OneDrive</div><div style="font-size:11.5px;color:#5b789c">/Small Farm USA · last sync 8:04 AM</div></div>
+    <div style="font-size:12px;color:#2a63a8;font-weight:700">✓</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+    <sc-for list="{{ docFolders }}" as="f" hint-placeholder-count="4">
+      <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:14px;cursor:pointer" style-hover="box-shadow:0 2px 8px rgba(44,51,32,.14)">
+        <div style="font-size:22px">{{ f.icon }}</div>
+        <div style="font-weight:700;font-size:13px;color:#2c3320;margin-top:8px">{{ f.label }}</div>
+        <div style="font-size:11.5px;color:#8a8672;margin-top:2px">{{ f.count }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ hasDocs }}" hint-placeholder-val="{{ false }}">
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px">Recent uploads</div>
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ docFiles }}" as="d" hint-placeholder-count="3">
+      <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0eee4">
+        <div style="width:34px;height:34px;border-radius:10px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none">{{ d.icon }}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;color:#2c3320;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.name }}</div><div style="font-size:11px;color:#8a8672">{{ d.meta }}</div></div>
+        <div style="color:#c2beac">›</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <div onClick="{{ docUpload }}" style="background:#fff;border:2px dashed #ccc7b2;border-radius:16px;padding:20px;text-align:center;margin-top:14px;cursor:pointer">
+    <div style="font-size:20px">📷</div>
+    <div style="font-weight:700;font-size:13px;color:#5a6b3b;margin-top:6px">Snap or upload a document</div>
+    <div style="font-size:11.5px;color:#8a8672;margin-top:2px">Brand inspections, receipts, vet records…</div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= AUDIT ================= -->
+<sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div onClick="{{ goMore }}" style="font-size:13px;color:#5a6b3b;font-weight:600;cursor:pointer;margin-bottom:12px">‹ More</div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">Reports &amp; audit</div>
+  <div style="font-size:12.5px;color:#8a8672;margin-top:3px">Complete paper trail — filter, then export for the inspector or your accountant</div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+    <sc-for list="{{ auditRangeOpts }}" as="o" hint-placeholder-count="3">
+      <div onClick="{{ o.pick }}" style="border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</div>
+    </sc-for>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+    <sc-for list="{{ auditBizOpts }}" as="o" hint-placeholder-count="5">
+      <div onClick="{{ o.pick }}" style="border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</div>
+    </sc-for>
+  </div>
+  <div style="font-size:12px;color:#8a8672;margin:16px 0 8px">{{ trailCount }}</div>
+  <sc-if value="{{ hasTrail }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ trail }}" as="r" hint-placeholder-count="5">
+      <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0eee4">
+        <div style="width:32px;height:32px;border-radius:9px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none">{{ r.icon }}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;color:#2c3320">{{ r.title }}</div><div style="font-size:11px;color:#8a8672;margin-top:1px">{{ r.sub }}</div></div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noTrail }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:28px 22px;text-align:center">
+    <div style="font-size:28px">📑</div>
+    <div style="font-weight:700;font-size:13.5px;color:#2c3320;margin-top:8px">No records match</div>
+    <div style="font-size:12px;color:#8a8672;margin-top:3px">Every animal event and money entry lands here automatically as you use the app.</div>
+  </div>
+  </sc-if>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <div onClick="{{ exportCsv }}" style="flex:1;background:#5a6b3b;color:#fff;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px;cursor:pointer">Export CSV</div>
+    <div onClick="{{ exportPdf }}" style="flex:1;background:#fff;border:1.5px solid #5a6b3b;color:#5a6b3b;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px;cursor:pointer">Export PDF</div>
+  </div>
+  <sc-if value="{{ wasExported }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;font-size:12.5px;color:#4a7a2e;font-weight:700;margin-top:10px">✓ {{ auditExported }}</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ================= MORE ================= -->
+<sc-if value="{{ isMore }}" hint-placeholder-val="{{ false }}">
+<div style="padding:44px 22px 20px">
+  <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;color:#2c3320">More</div>
+  <div onClick="{{ goMoney }}" style="background:#2c3320;border-radius:16px;padding:14px 16px;margin-top:14px;color:#fff;display:flex;align-items:center;gap:12px;cursor:pointer">
+    <div style="width:34px;height:34px;border-radius:10px;background:#414a33;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none">$</div>
+    <div style="flex:1"><div style="font-weight:700;font-size:14px">Money · Schedule F</div><div style="font-size:11.5px;color:#a8ad94">{{ moneyTeaser }}</div></div>
+    <div style="color:#8a9478">›</div>
+  </div>
+  <div onClick="{{ goAudit }}" style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:14px 16px;margin-top:10px;display:flex;align-items:center;gap:12px;cursor:pointer">
+    <div style="width:34px;height:34px;border-radius:10px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none">📑</div>
+    <div style="flex:1"><div style="font-weight:700;font-size:14px;color:#2c3320">Reports &amp; audit</div><div style="font-size:11.5px;color:#8a8672">Pull records fast for the brand inspector</div></div>
+    <div style="color:#c2beac">›</div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 0 10px">
+    <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px">Equipment</div>
+    <div onClick="{{ eqFormToggle }}" style="font-size:12px;color:#5a6b3b;font-weight:700;cursor:pointer">+ Add equipment</div>
+  </div>
+  <sc-if value="{{ showEqForm }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:14px;margin-bottom:12px">
+    <div style="display:flex;gap:8px">
+      <input name="name" value="{{ eqForm.name }}" onChange="{{ eqChange }}" placeholder="e.g. JD 5075E tractor" style="flex:1;border:1px solid #ddd9c8;border-radius:10px;padding:11px 13px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+      <input name="hours" type="number" value="{{ eqForm.hours }}" onChange="{{ eqChange }}" placeholder="Hours/mi" style="width:90px;border:1px solid #ddd9c8;border-radius:10px;padding:11px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+    </div>
+    <div onClick="{{ eqSave }}" style="background:#5a6b3b;color:#fff;border-radius:12px;padding:12px;text-align:center;font-weight:700;font-size:13px;cursor:pointer;margin-top:10px">Add equipment</div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ hasEquipment }}" hint-placeholder-val="{{ false }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <sc-for list="{{ equipment }}" as="eq" hint-placeholder-count="2">
+      <div style="border-bottom:1px solid #f0eee4">
+        <div style="padding:13px 16px;display:flex;gap:12px;align-items:center">
+          <div style="width:36px;height:36px;border-radius:10px;background:#eceadd;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none">🚜</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;color:#2c3320">{{ eq.name }}</div>
+            <div style="font-size:11.5px;color:#8a8672;margin-top:1px">{{ eq.meta }}</div>
+          </div>
+          <div onClick="{{ eq.edit }}" style="font-size:11.5px;color:#5a6b3b;font-weight:700;cursor:pointer;padding:6px 10px;border:1.5px solid #5a6b3b;border-radius:10px;flex:none">Update</div>
+        </div>
+        <sc-if value="{{ eq.editing }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:0 16px 14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px">
+            <input value="{{ eqEditHours }}" onChange="{{ eqEditHoursChange }}" type="number" placeholder="New hours / miles" style="width:150px;border:1px solid #ddd9c8;border-radius:10px;padding:10px 12px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+            <input value="{{ eqEditService }}" onChange="{{ eqEditServiceChange }}" placeholder="Service done (optional)" style="flex:1;border:1px solid #ddd9c8;border-radius:10px;padding:10px 12px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+          </div>
+          <div onClick="{{ eq.saveEdit }}" style="background:#5a6b3b;color:#fff;border-radius:10px;padding:11px;text-align:center;font-weight:700;font-size:12.5px;cursor:pointer">Save update</div>
+        </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noEquipment }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:24px 22px;text-align:center">
+    <div style="font-size:26px">🚜</div>
+    <div style="font-weight:700;font-size:13px;color:#2c3320;margin-top:8px">No equipment yet</div>
+    <div style="font-size:12px;color:#8a8672;margin-top:3px">Add tractors, balers, trailers — then log hours and services as you go.</div>
+  </div>
+  </sc-if>
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px">Family feedback</div>
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);padding:14px 16px">
+    <sc-if value="{{ hasFeedback }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+      <sc-for list="{{ feedback }}" as="fb" hint-placeholder-count="2">
+        <div style="border-bottom:1px solid #f0eee4;padding-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700;font-size:12.5px;color:#2c3320">{{ fb.who }} <span style="font-weight:500;color:#8a8672">· {{ fb.date }}</span></div>
+            <div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:{{ fb.badgeBg }};color:{{ fb.badgeFg }}">{{ fb.status }}</div>
+          </div>
+          <div style="font-size:12.5px;color:#4a4636;margin-top:4px">{{ fb.text }}</div>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input value="{{ fbName }}" onChange="{{ fbNameChange }}" placeholder="Your first name" style="width:150px;border:1px solid #ddd9c8;border-radius:12px;padding:11px 13px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+      <div style="display:flex;gap:8px">
+        <input value="{{ fbDraft }}" onChange="{{ fbChange }}" placeholder="Suggest an improvement…" style="flex:1;border:1px solid #ddd9c8;border-radius:12px;padding:11px 13px;font-size:13px;background:#faf8f2;outline-color:#5a6b3b">
+        <div onClick="{{ fbSend }}" style="background:#5a6b3b;color:#fff;border-radius:12px;padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center">Send</div>
+      </div>
+    </div>
+  </div>
+  <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#8a8672;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px">Farm &amp; account</div>
+  <div style="background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(44,51,32,.08);overflow:hidden">
+    <div style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0eee4">
+      <div style="font-weight:600;font-size:13px;color:#2c3320">👤 Your role</div>
+      <div onClick="{{ roleToggle }}" style="font-size:12px;font-weight:700;color:#fff;background:{{ roleBg }};border-radius:14px;padding:5px 12px;cursor:pointer">{{ roleLabel }} · switch</div>
+    </div>
+    <div style="padding:13px 16px;display:flex;justify-content:space-between;border-bottom:1px solid #f0eee4"><div style="font-weight:600;font-size:13px;color:#2c3320">👪 Family members</div><div style="font-size:12px;color:#8a8672">10 · manage ›</div></div>
+    <div style="padding:13px 16px;display:flex;justify-content:space-between;border-bottom:1px solid #f0eee4"><div style="font-weight:600;font-size:13px;color:#2c3320">🔒 Security &amp; encryption</div><div style="font-size:12px;color:#4a7a2e;font-weight:700">On ›</div></div>
+    <div style="padding:13px 16px;display:flex;justify-content:space-between"><div style="font-weight:600;font-size:13px;color:#2c3320">☁️ OneDrive backup</div><div style="font-size:12px;color:#4a7a2e;font-weight:700">Connected ›</div></div>
+  </div>
+  <div style="font-size:11px;color:#b3af9d;margin-top:10px;text-align:center">Admins can delete records and tasks. Members can add and update everything else. Kid mode is a simple chore view.</div>
+</div>
+</sc-if>
+
+</div><!-- /scroll -->
+
+<!-- ================= FAB (home only) ================= -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <sc-if value="{{ fabOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ fabClose }}" style="position:absolute;inset:0;background:rgba(44,51,32,.35);z-index:5"></div>
+  <div style="position:absolute;right:18px;bottom:140px;z-index:6;display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+    <sc-for list="{{ fabActions }}" as="fa" hint-placeholder-count="4">
+      <div onClick="{{ fa.go }}" style="background:#fff;border-radius:14px;box-shadow:0 4px 16px rgba(44,51,32,.25);padding:12px 16px;display:flex;gap:10px;align-items:center;cursor:pointer" style-hover="background:#f0f3e6">
+        <div style="font-size:15px">{{ fa.icon }}</div><div style="font-weight:700;font-size:13px;color:#2c3320;white-space:nowrap">{{ fa.label }}</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <div onClick="{{ fabToggle }}" style="position:absolute;right:18px;bottom:82px;z-index:6;width:52px;height:52px;border-radius:18px;background:#5a6b3b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:400;cursor:pointer;box-shadow:0 4px 14px rgba(44,51,32,.35)" style-hover="background:#4c5b31">{{ fabIcon }}</div>
+</sc-if>
+
+<!-- ================= TAB BAR ================= -->
+<div style="display:flex;border-top:1px solid #eceadd;background:#fff;padding:10px 8px 18px;flex:none">
+  <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="5">
+    <div onClick="{{ tab.pick }}" style="flex:1;text-align:center;font-size:10.5px;cursor:pointer;font-weight:{{ tab.w }};color:{{ tab.color }}"><div style="font-size:18px">{{ tab.icon }}</div>{{ tab.label }}</div>
+  </sc-for>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 430, &quot;height&quot;: 860}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'home', role: 'admin', filter: 'all', search: '', selId: null, auction: 'sterling',
+    fabOpen: false, nbSaved: false, fbDraft: '', fbName: '',
+    sellOpen: false, sellBuyer: '', sellPrice: '', chores: [],
+    logType: null, logVal: '',
+    nb: { cls: 'livestock', species: 'cattle', petSpecies: 'dog', sex: 'Heifer', tag: '', name: '', born: '2026-07-17', weight: '', color: '', dam: '', count: '' },
+    txnKind: 'expense', txn: { desc: '', amount: '', date: '2026-07-17', line: '', receipt: false, business: 'Cattle' }, moneyBiz: 'All',
+    auditRange: 'YTD', auditBiz: 'All', auditExported: '',
+    showTaskForm: false, taskForm: { title: '', date: '2026-07-17', type: 'Butcher', assignee: 'Everyone' },
+    showEqForm: false, eqForm: { name: '', hours: '' }, eqEditId: null, eqEditHours: '', eqEditService: '',
+    calOffset: 0,
+    animals: [], equipment: [], tasks: [], txns: [], docFiles: [], feedback: []
+  };
+  fmt(n) { return (n < 0 ? '\u2212$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+  ageMo(born) { return Math.max(0, (new Date('2026-07-17') - new Date(born)) / 2629800000); }
+  ageLabel(born) { const m = this.ageMo(born); if (m < 3) { const w = Math.round(m * 4.345); return w + ' wk'; } if (m < 24) return (Math.round(m * 10) / 10) + ' mo'; return (Math.round(m / 1.2) / 10) + ' yr'; }
+  lastWeight(a) { const ev = a.events.find(e => e.type === 'weight' || e.type === 'born'); return ev && ev.lb ? ev.lb : null; }
+  suggestionFor(a) {
+    if (a.status !== 'active' || a.cls === 'pet') return null;
+    const m = this.ageMo(a.born), lb = this.lastWeight(a);
+    if (a.species === 'cattle') {
+      if ((a.sex === 'Heifer' || a.sex === 'Steer') && m >= 6 && m <= 8.5) return { t: 'In the weaning window', b: 'Calves wean best at 6\u20138 months / 450\u2013600 lb. This one is ' + this.ageLabel(a.born) + (lb ? ' at ~' + lb + ' lb (last weigh-in)' : ' \u2014 log a weight to sharpen this') + '.' };
+      if (a.sex === 'Steer' && m >= 18) return { t: 'Near typical finish age', b: 'Steers typically finish at 1,100\u20131,400 lb around 18\u201322 months.' + (lb ? ' Last weigh-in: ' + lb + ' lb.' : ' Log a current weight to confirm.') };
+    }
+    if (a.species === 'pig' && (m >= 5.5 || (lb && lb >= 250))) return { t: 'Near market weight', b: 'Pigs are typically butchered at 250\u2013290 lb (~6 months).' + (lb ? ' Last weigh-in: ' + lb + ' lb.' : ' Log a weight to confirm.') };
+    if (a.species === 'chicken' && m >= 1.8 && m < 6) return { t: 'Check processing age', b: 'Meat birds (Cornish Cross) process best at 8\u201310 weeks. This record is ' + this.ageLabel(a.born) + ' old.' };
+    return null;
+  }
+  nav(s) { this.setState({ screen: s, fabOpen: false, nbSaved: false, logType: null, sellOpen: false }); }
+  openAnimal(id) { this.setState({ screen: 'detail', selId: id, logType: null, fabOpen: false, sellOpen: false }); }
+  addEvent(id, ev) { this.setState(st => ({ animals: st.animals.map(a => a.id === id ? { ...a, events: [ev, ...a.events] } : a) })); }
+  renderVals() {
+    const S = this.state, nav = s => () => this.nav(s), today = '2026-07-17';
+    const emojiOf = sp => ({ cattle: '\ud83d\udc04', pig: '\ud83d\udc16', chicken: '\ud83d\udc14', dog: '\ud83d\udc15', cat: '\ud83d\udc08', horse: '\ud83d\udc0e' }[sp] || '\ud83d\udc3e');
+    const active = S.animals.filter(a => a.status === 'active' && a.cls !== 'pet');
+    const pets = S.animals.filter(a => a.cls === 'pet');
+    const nCattle = active.filter(a => a.species === 'cattle').length;
+    const nPigs = active.filter(a => a.species === 'pig').length;
+    const nChickens = active.filter(a => a.species === 'chicken').length;
+    // attention: animal suggestions + upcoming tasks (14 days) + overdue equipment
+    const attention = [];
+    for (const a of active) { const s = this.suggestionFor(a); if (s) attention.push({ icon: emojiOf(a.species), bg: '#f5e3d7', title: s.t + ' \u2014 ' + (a.name || '#' + a.tag), sub: s.b.length > 64 ? s.b.slice(0, 64) + '\u2026' : s.b, go: () => this.openAnimal(a.id) }); }
+    for (const t of S.tasks.filter(t => !t.done)) {
+      const days = Math.round((new Date(t.date) - new Date(today)) / 86400000);
+      if (days >= 0 && days <= 14) attention.push({ icon: t.icon, bg: '#e3ecd7', title: t.title, sub: (days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'In ' + days + ' days') + ' \u00b7 ' + t.type, go: nav('calendar') });
+    }
+    const auctions = {
+      sterling: { name: 'Sterling Livestock', meta: 'Sterling, CO \u00b7 Jul 15 sale \u00b7 1,840 head', quotes: [
+        { label: 'Steers 500\u2013600 lb', note: 'Med/Lg 1', price: '$342.50', delta: '\u25b2 $4.25', up: 1 },
+        { label: 'Steers 600\u2013700 lb', note: 'Med/Lg 1', price: '$321.00', delta: '\u25b2 $3.00', up: 1 },
+        { label: 'Heifers 500\u2013600 lb', note: 'Med/Lg 1', price: '$318.00', delta: '\u25b2 $2.00', up: 1 },
+        { label: 'Cull cows', note: 'Boning 80\u201385%', price: '$142.75', delta: '\u25bc $1.50', up: 0 },
+        { label: 'Feeder pigs 40\u201360 lb', note: 'US 1-2', price: '$78.00', delta: '\u25b2 $2.50', up: 1 },
+        { label: 'Slaughter hogs', note: 'Nat. base carcass', price: '$96.40', delta: '\u25bc $0.80', up: 0 }] },
+      brush: { name: 'Livestock Exchange, Brush', meta: 'Brush, CO \u00b7 Jul 16 sale \u00b7 990 head', quotes: [
+        { label: 'Steers 500\u2013600 lb', note: 'Med/Lg 1', price: '$339.00', delta: '\u25b2 $3.50', up: 1 },
+        { label: 'Heifers 500\u2013600 lb', note: 'Med/Lg 1', price: '$315.25', delta: '\u25b2 $1.75', up: 1 },
+        { label: 'Cull cows', note: 'Boning 80\u201385%', price: '$141.00', delta: '\u25bc $2.00', up: 0 },
+        { label: 'Bred cows', note: '3\u20136 yr, fall calvers', price: '$2,850/hd', delta: '\u25b2 $50', up: 1 }] },
+      lajunta: { name: 'Winter Livestock', meta: 'La Junta, CO \u00b7 Jul 14 sale \u00b7 2,210 head', quotes: [
+        { label: 'Steers 500\u2013600 lb', note: 'Med/Lg 1', price: '$344.75', delta: '\u25b2 $5.00', up: 1 },
+        { label: 'Heifers 500\u2013600 lb', note: 'Med/Lg 1', price: '$320.50', delta: '\u25b2 $2.25', up: 1 },
+        { label: 'Cull cows', note: 'Boning 80\u201385%', price: '$144.00', delta: '\u25b2 $0.50', up: 1 }] },
+      ftcollins: { name: 'Centennial Livestock', meta: 'Fort Collins, CO \u00b7 Jul 16 sale \u00b7 760 head', quotes: [
+        { label: 'Steers 500\u2013600 lb', note: 'Med/Lg 1', price: '$340.25', delta: '\u25b2 $2.75', up: 1 },
+        { label: 'Cull cows', note: 'Boning 80\u201385%', price: '$143.25', delta: '\u25bc $0.75', up: 0 },
+        { label: 'Slaughter hogs', note: 'Nat. base carcass', price: '$96.10', delta: '\u25bc $1.00', up: 0 }] }
+    };
+    const auc = auctions[S.auction], dirC = u => u ? '#5a8a3b' : '#b5502a';
+    const quotes = auc.quotes.map(q => ({ ...q, dirColor: dirC(q.up) }));
+    const homeQuotes = quotes.slice(0, 3).map(q => ({ ...q, label: q.label.replace('500\u2013600 lb', '5\u20136 cwt') }));
+    const auctionOpts = Object.entries(auctions).map(([k, v]) => ({ label: v.name.split(',')[0], bg: k === S.auction ? '#5a6b3b' : '#eceadd', fg: k === S.auction ? '#fff' : '#4a4636', pick: () => this.setState({ auction: k }) }));
+    // money
+    const income = S.txns.filter(t => t.kind === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = S.txns.filter(t => t.kind === 'expense').reduce((s, t) => s + t.amount, 0);
+    const bizOfSp = { cattle: 'Cattle', pig: 'Hogs', chicken: 'Poultry' };
+    const bizList = ['All', 'Cattle', 'Poultry', 'Hogs', 'General'];
+    const bizTxns = S.moneyBiz === 'All' ? S.txns : S.txns.filter(t => (t.business || 'General') === S.moneyBiz);
+    const mbIncome = bizTxns.filter(t => t.kind === 'income').reduce((s, t) => s + t.amount, 0);
+    const mbExpense = bizTxns.filter(t => t.kind === 'expense').reduce((s, t) => s + t.amount, 0);
+    const txns = bizTxns.map(t => ({ icon: t.kind === 'income' ? '\ud83d\udcb5' : '\ud83e\uddfe', desc: t.desc, date: t.date.slice(5).replace('-', '/'), line: (t.business || 'General') + ' \u00b7 ' + t.line, amt: (t.kind === 'income' ? '+' : '\u2212') + '$' + t.amount.toLocaleString(), amtColor: t.kind === 'income' ? '#4a7a2e' : '#2c3320', receiptNote: t.receipt ? ' \u00b7 \ud83d\udcce receipt' : '' }));
+    // animals list
+    const filters = [['all', 'All'], ['cattle', '\ud83d\udc04 Cattle'], ['pig', '\ud83d\udc16 Pigs'], ['chicken', '\ud83d\udc14 Chickens']];
+    const speciesFilters = filters.map(([k, label]) => ({ label, bg: k === S.filter ? '#5a6b3b' : '#eceadd', fg: k === S.filter ? '#fff' : '#4a4636', pick: () => this.setState({ filter: k }) }));
+    const q = S.search.toLowerCase();
+    const badge = a => {
+      if (a.status === 'sold') return ['Sold', '#e8e4f0', '#5b4a8a'];
+      if (a.status === 'butchered') return ['Butchered', '#f0e4dd', '#7a4a2e'];
+      const s = this.suggestionFor(a); if (s) return ['Action', '#f5e3d7', '#a35422'];
+      return ['OK', '#e3ecd7', '#4a6b2e'];
+    };
+    const filteredAnimals = S.animals
+      .filter(a => a.cls !== 'pet' && (S.filter === 'all' || a.species === S.filter) && (!q || (a.tag + ' ' + a.name + ' ' + a.dam).toLowerCase().includes(q)))
+      .map(a => { const [b, bg, fg] = badge(a); return {
+        emoji: emojiOf(a.species), title: (a.name ? a.name + ' \u00b7 ' : '') + '#' + a.tag,
+        sub: (a.count > 1 ? 'Lot of ' + a.count + ' \u00b7 ' : '') + a.sex + ' \u00b7 ' + this.ageLabel(a.born) + ' \u00b7 ' + a.color, badge: b, badgeBg: bg, badgeFg: fg, open: () => this.openAnimal(a.id) }; });
+    const petList = pets.map(a => ({ emoji: emojiOf(a.species), title: a.name, sub: a.species.charAt(0).toUpperCase() + a.species.slice(1) + ' \u00b7 ' + this.ageLabel(a.born) + ' \u00b7 ' + a.color, open: () => this.openAnimal(a.id) }));
+    // detail
+    const sel = S.animals.find(a => a.id === S.selId) || S.animals[0] || null;
+    const sSug = sel ? this.suggestionFor(sel) : null;
+    const evIcons = { born: '\ud83c\udf7c', vax: '\ud83d\udc89', weight: '\u2696\ufe0f', tag: '\ud83c\udff7', note: '\ud83d\udcdd', sold: '\ud83d\udcb5', butchered: '\ud83e\udd69' };
+    const detEvents = sel ? sel.events.map(e => ({ icon: evIcons[e.type] || '\ud83d\udcdd', title: e.title, date: e.date, by: e.by })) : [];
+    const selLb = sel ? this.lastWeight(sel) : null;
+    const selLbEv = sel ? sel.events.find(e => (e.type === 'weight' || e.type === 'born') && e.lb) : null;
+    const det = sel ? {
+      emoji: emojiOf(sel.species), title: (sel.name ? sel.name + ' \u00b7 ' : '') + '#' + sel.tag,
+      subtitle: sel.cls === 'pet' ? 'Pet / working animal \u00b7 born ' + sel.born : (sel.count > 1 ? 'Lot of ' + sel.count + ' \u00b7 ' : '') + sel.sex + ' \u00b7 born ' + sel.born + ' \u00b7 dam ' + sel.dam + ' \u00b7 ' + sel.status,
+      age: this.ageLabel(sel.born), weight: selLb ? selLb + ' lb (' + selLbEv.date + ')' : 'Not recorded', color: sel.color,
+      hasSuggestion: !!sSug, suggestionTitle: sSug ? sSug.t : '', suggestionBody: sSug ? sSug.b : '',
+      markSold: () => this.setState(st => ({ sellOpen: !st.sellOpen, sellBuyer: '', sellPrice: '' })),
+      markButchered: () => this.setState(st => ({ animals: st.animals.map(a => a.id === sel.id ? { ...a, status: 'butchered', events: [{ date: 'Jul 17', type: 'butchered', title: 'Marked butchered', by: 'You' }, ...a.events] } : a) })),
+      remove: () => this.setState(st => ({ screen: 'animals', animals: st.animals.filter(a => a.id !== sel.id) }))
+    } : { emoji: '', title: '', subtitle: '', age: '', weight: '', color: '', hasSuggestion: false, suggestionTitle: '', suggestionBody: '', markSold: () => {}, markButchered: () => {}, remove: () => {} };
+    const detIsPet = !!(sel && sel.cls === 'pet');
+    const logDefs = detIsPet ? [['weight', '+ Weight'], ['vax', '+ Vet visit'], ['note', '+ Note']] : [['weight', '+ Weight'], ['vax', '+ Vaccination'], ['note', '+ Note']];
+    const logButtons = logDefs.map(([k, label]) => ({ label, bg: S.logType === k ? '#5a6b3b' : '#fff', fg: S.logType === k ? '#fff' : '#5a6b3b', pick: () => this.setState(st => ({ logType: st.logType === k ? null : k, logVal: '' })) }));
+    const logPh = { weight: 'Weight in lb, e.g. 540', vax: 'Vaccine given, e.g. Blackleg 7-way', note: 'Note, e.g. limping on left front' };
+    // add newborn opts
+    const nbClsOpts = [['livestock', '\ud83d\udc04 Livestock'], ['pet', '\ud83d\udc15 Pet / working']].map(([k, label]) => ({ label, border: k === S.nb.cls ? '#5a6b3b' : '#ddd9c8', bg: k === S.nb.cls ? '#f0f3e6' : '#fff', pick: () => this.setState(st => ({ nb: { ...st.nb, cls: k } })) }));
+    const petSp = [['dog', '\ud83d\udc15', 'Dog'], ['cat', '\ud83d\udc08', 'Cat'], ['horse', '\ud83d\udc0e', 'Horse']];
+    const nbPetSpeciesOpts = petSp.map(([k, emoji, label]) => ({ emoji, label, border: k === S.nb.petSpecies ? '#5a6b3b' : '#ddd9c8', bg: k === S.nb.petSpecies ? '#f0f3e6' : '#fff', pick: () => this.setState(st => ({ nb: { ...st.nb, petSpecies: k } })) }));
+    const nbSp = [['cattle', '\ud83d\udc04', 'Calf'], ['pig', '\ud83d\udc16', 'Piglet'], ['chicken', '\ud83d\udc14', 'Chick(s)']];
+    const nbSpeciesOpts = nbSp.map(([k, emoji, label]) => ({ emoji, label, border: k === S.nb.species ? '#5a6b3b' : '#ddd9c8', bg: k === S.nb.species ? '#f0f3e6' : '#fff', pick: () => this.setState(st => ({ nb: { ...st.nb, species: k, sex: { cattle: 'Heifer', pig: 'Gilt', chicken: 'Pullet' }[k] } })) }));
+    const sexBy = { cattle: ['Heifer', 'Bull', 'Steer'], pig: ['Gilt', 'Boar', 'Barrow'], chicken: ['Pullet', 'Cockerel', 'Straight run'] };
+    const nbSexOpts = sexBy[S.nb.species].map(x => ({ label: x, border: x === S.nb.sex ? '#5a6b3b' : '#ddd9c8', bg: x === S.nb.sex ? '#f0f3e6' : '#fff', pick: () => this.setState(st => ({ nb: { ...st.nb, sex: x } })) }));
+    // calendar
+    const base = new Date(2026, 6 + S.calOffset, 1);
+    const monthName = base.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const first = base.getDay(), dim = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+    const pad2 = n => (n < 10 ? '0' : '') + n;
+    const mKey = base.getFullYear() + '-' + pad2(base.getMonth() + 1);
+    const calCells = [];
+    for (let i = 0; i < first; i++) calCells.push({ d: '', dot: false, bg: 'transparent', fg: '#b3af9d', w: 500, pick: () => {} });
+    for (let d = 1; d <= dim; d++) {
+      const key = mKey + '-' + pad2(d);
+      const isToday = key === today;
+      calCells.push({ d: String(d), dot: S.tasks.some(t => t.date === key && !t.done), bg: isToday ? '#5a6b3b' : 'transparent', fg: isToday ? '#fff' : '#2c3320', w: isToday ? 800 : 500, pick: () => this.setState(st => ({ showTaskForm: true, taskForm: { ...st.taskForm, date: key } })) });
+    }
+    const taskTypes = [['Butcher', '\ud83e\udd69'], ['Maintenance', '\ud83d\udd27'], ['Vaccination', '\ud83d\udc89'], ['Other', '\ud83d\udccc']];
+    const taskTypeOpts = taskTypes.map(([k, icon]) => ({ label: icon + ' ' + k, bg: S.taskForm.type === k ? '#5a6b3b' : '#eceadd', fg: S.taskForm.type === k ? '#fff' : '#4a4636', pick: () => this.setState(st => ({ taskForm: { ...st.taskForm, type: k } })) }));
+    const sortedTasks = [...S.tasks].sort((a, b) => a.date.localeCompare(b.date));
+    const taskList = sortedTasks.map(t => {
+      const days = Math.round((new Date(t.date) - new Date(today)) / 86400000);
+      const when = t.date + (days === 0 ? ' (today)' : days > 0 ? ' (in ' + days + 'd)' : ' (' + (-days) + 'd ago)');
+      return { icon: t.icon, title: t.title, when, by: t.by, assignee: t.assignee || 'Everyone', check: t.done ? '\u2713' : '', deco: t.done ? 'line-through' : 'none', titleColor: t.done ? '#b3af9d' : '#2c3320', boxBorder: t.done ? '#5a6b3b' : '#ccc7b2', boxBg: t.done ? '#5a6b3b' : '#fff',
+        invite: () => { const ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Small Farm USA//EN\r\nBEGIN:VEVENT\r\nUID:' + t.id + '@smallfarmusa\r\nDTSTART;VALUE=DATE:' + t.date.split('-').join('') + '\r\nSUMMARY:' + t.title + '\r\nDESCRIPTION:Small Farm USA \u00b7 ' + t.type + ' \u00b7 for ' + (t.assignee || 'Everyone') + '\r\nEND:VEVENT\r\nEND:VCALENDAR'; const a = document.createElement('a'); a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics); a.download = t.title.replace(/[^a-z0-9]+/gi, '-') + '.ics'; document.body.appendChild(a); a.click(); a.remove(); },
+        toggle: () => this.setState(st => ({ tasks: st.tasks.map(x => x.id === t.id ? { ...x, done: !x.done } : x) })),
+        remove: () => this.setState(st => ({ tasks: st.tasks.filter(x => x.id !== t.id) })) };
+    });
+    // equipment
+    const equipment = S.equipment.map(eq => ({ ...eq,
+      meta: eq.hours + ' ' + eq.unit + (eq.lastService ? ' \u00b7 ' + eq.lastService : ' \u00b7 no service logged yet'),
+      editing: S.eqEditId === eq.id,
+      edit: () => this.setState({ eqEditId: S.eqEditId === eq.id ? null : eq.id, eqEditHours: '', eqEditService: '' }),
+      saveEdit: () => this.setState(st => ({ eqEditId: null, equipment: st.equipment.map(x => x.id === eq.id ? { ...x, hours: st.eqEditHours ? (+st.eqEditHours).toLocaleString() : x.hours, lastService: st.eqEditService ? st.eqEditService + ' \u2014 Jul 17' : x.lastService } : x) })) }));
+    // feedback
+    const fbBadge = { New: ['#e8eef5', '#2a63a8'], Planned: ['#f7ecd4', '#8a6a1e'], Done: ['#e3ecd7', '#4a6b2e'] };
+    const feedback = S.feedback.map(f => ({ ...f, badgeBg: fbBadge[f.status][0], badgeFg: fbBadge[f.status][1] }));
+    // tabs + fab
+    const tabDefs = [['home', '\u2302', 'Home'], ['animals', '\u2630', 'Animals'], ['calendar', '\ud83d\udcc5', 'Calendar'], ['docs', '\u25a4', 'Docs'], ['more', '\u2699', 'More']];
+    const screenTab = { home: 'home', animals: 'animals', detail: 'animals', add: 'animals', markets: 'home', money: 'more', addtxn: 'more', docs: 'docs', calendar: 'calendar', more: 'more', audit: 'more' };
+    const tabs = tabDefs.map(([k, icon, label]) => ({ icon, label, pick: nav(k), color: screenTab[S.screen] === k ? '#5a6b3b' : '#b3af9d', w: screenTab[S.screen] === k ? 700 : 500 }));
+    const openTxn = kind => () => this.setState({ screen: 'addtxn', txnKind: kind, fabOpen: false, txn: { desc: '', amount: '', date: today, line: kind === 'income' ? 'Line 2 \u00b7 Sales of raised livestock/produce' : 'Line 16 \u00b7 Feed', receipt: false, business: 'Cattle' } });
+    const fabActions = [
+      { icon: '\ud83e\uddfe', label: 'Expense + receipt', go: openTxn('expense') },
+      { icon: '\ud83d\udcb5', label: 'Income', go: openTxn('income') },
+      { icon: '\ud83d\udcc4', label: 'Upload a doc', go: () => { this.nav('docs'); } },
+      { icon: '\ud83d\udc04', label: 'New animal', go: nav('add') },
+      { icon: '\ud83d\udcc5', label: 'Schedule a task', go: () => this.setState({ screen: 'calendar', showTaskForm: true, fabOpen: false }) },
+      { icon: '\ud83d\udcac', label: 'Send feedback', go: nav('more') }
+    ];
+    const expLines = ['Line 10 \u00b7 Car & truck', 'Line 13 \u00b7 Custom hire', 'Line 16 \u00b7 Feed', 'Line 17 \u00b7 Fertilizers & lime', 'Line 19 \u00b7 Gasoline, fuel & oil', 'Line 20 \u00b7 Insurance', 'Line 22 \u00b7 Labor hired', 'Line 24 \u00b7 Rent/lease', 'Line 25 \u00b7 Repairs & maintenance', 'Line 26 \u00b7 Seeds & plants', 'Line 28 \u00b7 Supplies', 'Line 29 \u00b7 Taxes', 'Line 30 \u00b7 Utilities', 'Line 31 \u00b7 Vet, breeding & medicine', 'Line 32 \u00b7 Other expenses'];
+    const incLines = ['Line 1a \u00b7 Sales of purchased livestock', 'Line 2 \u00b7 Sales of raised livestock/produce', 'Line 4a \u00b7 Ag program payments', 'Line 8 \u00b7 Other income'];
+    const chip = (label, on, pick) => ({ label, bg: on ? '#5a6b3b' : '#eceadd', fg: on ? '#fff' : '#4a4636', pick });
+    const moneyBizOpts = bizList.map(b => chip(b, b === S.moneyBiz, () => this.setState({ moneyBiz: b })));
+    const txnBizOpts = ['Cattle', 'Poultry', 'Hogs', 'General'].map(b => chip(b, b === S.txn.business, () => this.setState(st => ({ txn: { ...st.txn, business: b } }))));
+    const auditBizOpts = bizList.map(b => chip(b, b === S.auditBiz, () => this.setState({ auditBiz: b, auditExported: '' })));
+    const auditRangeOpts = ['30 days', 'YTD', 'All'].map(r => chip(r, r === S.auditRange, () => this.setState({ auditRange: r, auditExported: '' })));
+    const assigneeOpts = ['Everyone', 'Dad', 'Mom', 'Kids'].map(x => chip(x, x === S.taskForm.assignee, () => this.setState(st => ({ taskForm: { ...st.taskForm, assignee: x } }))));
+    const kidChores = [['\ud83e\udd5a', 'Collected eggs'], ['\ud83c\udf3e', 'Fed & watered'], ['\ud83d\udca7', 'Filled water'], ['\ud83d\udc40', 'Checked animals']];
+    const kidChoreOpts = kidChores.map(([icon, label]) => ({ icon, label, go: () => this.setState(st => ({ chores: [{ icon, title: label, date: 'Jul 18', by: 'Kid mode' }, ...st.chores] })) }));
+    const kidTasks = taskList.filter(t => t.assignee === 'Kids' || t.assignee === 'Everyone');
+    const cutoff = S.auditRange === '30 days' ? '2026-06-18' : S.auditRange === 'YTD' ? '2026-01-01' : '0000';
+    const trail = [];
+    for (const t of S.txns) { const b = t.business || 'General'; if ((S.auditBiz === 'All' || b === S.auditBiz) && t.date >= cutoff) trail.push({ icon: t.kind === 'income' ? '\ud83d\udcb5' : '\ud83e\uddfe', title: t.desc + ' \u00b7 ' + (t.kind === 'income' ? '+' : '\u2212') + '$' + t.amount.toLocaleString(), sub: t.date + ' \u00b7 ' + b + ' \u00b7 ' + t.line + (t.receipt ? ' \u00b7 \ud83d\udcce receipt on file' : '') }); }
+    for (const a of S.animals) { const b = a.cls === 'pet' ? 'General' : (bizOfSp[a.species] || 'General'); if (S.auditBiz === 'All' || b === S.auditBiz) for (const e of a.events) trail.push({ icon: evIcons[e.type] || '\ud83d\udcdd', title: (a.name || '#' + a.tag) + ' \u2014 ' + e.title, sub: e.date + ' \u00b7 ' + b + ' \u00b7 logged by ' + e.by }); }
+    if (S.auditBiz === 'All' || S.auditBiz === 'General') for (const c of S.chores) trail.push({ icon: c.icon, title: 'Chore \u2014 ' + c.title, sub: c.date + ' \u00b7 General \u00b7 logged by ' + c.by });
+    return {
+      isHome: S.screen === 'home' && S.role !== 'kid', isKidHome: S.screen === 'home' && S.role === 'kid', isAnimals: S.screen === 'animals', isDetail: S.screen === 'detail', isAdd: S.screen === 'add',
+      isCalendar: S.screen === 'calendar', isMarkets: S.screen === 'markets', isMoney: S.screen === 'money', isAddTxn: S.screen === 'addtxn',
+      isDocs: S.screen === 'docs', isMore: S.screen === 'more', isAudit: S.screen === 'audit', goAudit: nav('audit'),
+      isAdmin: S.role === 'admin', notAdmin: S.role !== 'admin',
+      roleLabel: S.role === 'admin' ? 'Admin' : S.role === 'member' ? 'Member' : 'Kid mode', roleBg: S.role === 'admin' ? '#5a6b3b' : S.role === 'member' ? '#8a8672' : '#2a63a8',
+      roleToggle: () => this.setState({ role: S.role === 'admin' ? 'member' : S.role === 'member' ? 'kid' : 'admin' }),
+      goHome: nav('home'), goAnimals: nav('animals'), goAdd: nav('add'), goMarkets: nav('markets'), goMoney: nav('money'), goMore: nav('more'), goCalendar: nav('calendar'),
+      goCattle: () => this.setState({ screen: 'animals', filter: 'cattle', fabOpen: false }),
+      goPigs: () => this.setState({ screen: 'animals', filter: 'pig', fabOpen: false }),
+      goChickens: () => this.setState({ screen: 'animals', filter: 'chicken', fabOpen: false }),
+      totalHead: nCattle + nPigs + nChickens, nCattle, nPigs, nChickens,
+      attention, hasAttention: attention.length > 0, noAttention: attention.length === 0,
+      homeQuotes, quotes, auctionOpts, auctionName: auc.name.split(',')[0], auctionMeta: auc.meta,
+      ytdIncome: this.fmt(income), ytdExpense: this.fmt(expense), ytdNet: this.fmt(income - expense),
+      netColor: income - expense >= 0 ? '#4a7a2e' : '#a3401e', netColorDark: income - expense >= 0 ? '#b8d18f' : '#e0a48a',
+      moneyBizOpts, txnBizOpts, moneyBizLabel: S.moneyBiz,
+      mbIncome: this.fmt(mbIncome), mbExpense: this.fmt(mbExpense), mbNet: this.fmt(mbIncome - mbExpense), mbNetColor: mbIncome - mbExpense >= 0 ? '#b8d18f' : '#e0a48a',
+      auditBizOpts, auditRangeOpts, trail, hasTrail: trail.length > 0, noTrail: trail.length === 0, trailCount: trail.length + ' record' + (trail.length === 1 ? '' : 's') + ' in view',
+      auditExported: S.auditExported, wasExported: !!S.auditExported,
+      exportCsv: () => this.setState({ auditExported: 'CSV exported (demo) \u2014 real app downloads a spreadsheet' }),
+      exportPdf: () => this.setState({ auditExported: 'PDF exported (demo) \u2014 real app makes a printable report' }),
+      petList, hasPets: pets.length > 0, noPets: pets.length === 0,
+      detIsPet, detIsLivestock: !detIsPet && !!sel,
+      nbClsOpts, nbPetSpeciesOpts, nbIsPet: S.nb.cls === 'pet', nbIsLivestock: S.nb.cls !== 'pet',
+      assigneeOpts, kidChoreOpts, kidTasks, hasKidTasks: kidTasks.length > 0, noKidTasks: kidTasks.length === 0, choresToday: S.chores.length, hasChores: S.chores.length > 0,
+      sellOpen: S.sellOpen, sellBuyer: S.sellBuyer, sellPrice: S.sellPrice,
+      sellBuyerChange: e => this.setState({ sellBuyer: e.target.value }), sellPriceChange: e => this.setState({ sellPrice: e.target.value }),
+      sellConfirm: () => { if (!sel) return; const buyer = S.sellBuyer.trim() || 'Private buyer'; const price = +S.sellPrice || 0; const biz = bizOfSp[sel.species] || 'General'; this.setState(st => ({ sellOpen: false, animals: st.animals.map(a => a.id === sel.id ? { ...a, status: 'sold', events: [{ date: 'Jul 18', type: 'sold', title: 'Sold to ' + buyer + (price ? ' \u00b7 $' + price.toLocaleString() : ''), by: 'You' }, ...a.events] } : a), txns: price ? [{ id: Date.now(), kind: 'income', desc: 'Sold ' + (sel.name || '#' + sel.tag) + ' \u2014 ' + buyer, amount: price, date: '2026-07-18', line: 'Line 2 \u00b7 Sales of raised livestock/produce', receipt: false, business: biz }, ...st.txns] : st.txns })); },
+      moneyTeaser: S.txns.length ? S.txns.length + ' entries \u00b7 net ' + this.fmt(income - expense) + ' YTD' : 'No entries yet \u00b7 tap to add',
+      speciesFilters, filteredAnimals, hasAnimals: S.animals.length > 0, noAnimals: S.animals.length === 0,
+      search: S.search, setSearch: e => this.setState({ search: e.target.value }),
+      det, detEvents, logButtons, logOpen: !!S.logType, logVal: S.logVal, logPlaceholder: logPh[S.logType] || '',
+      logChange: e => this.setState({ logVal: e.target.value }),
+      logSave: () => { if (!sel || !S.logVal.trim()) return; const v = S.logVal.trim(); const ev = S.logType === 'weight' ? { date: 'Jul 17', type: 'weight', title: 'Weighed ' + v + ' lb', lb: +v || null, by: 'You' } : S.logType === 'vax' ? { date: 'Jul 17', type: 'vax', title: v, by: 'You' } : { date: 'Jul 17', type: 'note', title: v, by: 'You' }; this.addEvent(sel.id, ev); this.setState({ logType: null, logVal: '' }); },
+      nb: S.nb, nbSaved: S.nbSaved, nbSpeciesOpts, nbSexOpts,
+      nbChange: e => { const { name, value } = e.target; this.setState(st => ({ nb: { ...st.nb, [name]: value } })); },
+      nbSave: () => { const n = S.nb; if (n.cls === 'pet') { if (!n.name.trim()) return; this.setState(st => ({ nbSaved: true, animals: [{ id: Date.now(), cls: 'pet', tag: n.name, name: n.name, species: n.petSpecies, sex: '\u2014', born: n.born, color: n.color || '\u2014', dam: '\u2014', status: 'active', events: [{ date: 'Jul 18', type: 'note', title: 'Added to the family', by: 'You' }] }, ...st.animals], nb: { ...st.nb, name: '', color: '' } })); return; } if (!n.tag) return; this.setState(st => ({ nbSaved: true, animals: [{ id: Date.now(), cls: 'livestock', tag: n.tag, name: n.name, species: n.species, sex: n.sex, born: n.born, color: n.color || '\u2014', dam: n.dam || '\u2014', count: +n.count || 1, status: 'active', events: [{ date: 'Jul 18', type: 'born', title: 'Born' + (n.weight ? ' \u00b7 ' + n.weight + ' lb' : '') + ' \u00b7 dam ' + (n.dam || '?'), lb: +n.weight || null, by: 'You' }, { date: 'Jul 18', type: 'tag', title: 'Tagged #' + n.tag, by: 'You' }] }, ...st.animals], nb: { ...st.nb, tag: '', name: '', weight: '', color: '', dam: '', count: '' } })); },
+      calTitle: monthName, calCells, calPrev: () => this.setState(st => ({ calOffset: st.calOffset - 1 })), calNext: () => this.setState(st => ({ calOffset: st.calOffset + 1 })),
+      showTaskForm: S.showTaskForm, taskFormToggle: () => this.setState(st => ({ showTaskForm: !st.showTaskForm })),
+      taskForm: S.taskForm, taskTypeOpts,
+      taskChange: e => { const { name, value } = e.target; this.setState(st => ({ taskForm: { ...st.taskForm, [name]: value } })); },
+      taskSave: () => { const f = S.taskForm; if (!f.title.trim()) return; const icons = { Butcher: '\ud83e\udd69', Maintenance: '\ud83d\udd27', Vaccination: '\ud83d\udc89', Other: '\ud83d\udccc' }; this.setState(st => ({ showTaskForm: false, tasks: [...st.tasks, { id: Date.now(), title: f.title, date: f.date, type: f.type, icon: icons[f.type], by: 'You', done: false, assignee: f.assignee || 'Everyone' }], taskForm: { ...st.taskForm, title: '' } })); },
+      taskList, hasTasks: S.tasks.length > 0, noTasks: S.tasks.length === 0,
+      txns, hasTxns: S.txns.length > 0, noTxns: S.txns.length === 0,
+      txnTitle: S.txnKind === 'income' ? 'New income' : 'New expense',
+      txn: S.txn, txnLineOpts: S.txnKind === 'income' ? incLines : expLines,
+      txnChange: e => { const { name, value } = e.target; this.setState(st => ({ txn: { ...st.txn, [name]: value } })); },
+      goAddExpense: openTxn('expense'), goAddIncome: openTxn('income'),
+      txnReceiptToggle: () => this.setState(st => ({ txn: { ...st.txn, receipt: !st.txn.receipt } })),
+      receiptLabel: S.txn.receipt ? '\u2713 Receipt photo attached (demo)' : 'Snap receipt photo',
+      receiptBorder: S.txn.receipt ? '#5a6b3b' : '#ccc7b2', receiptBg: S.txn.receipt ? '#f0f3e6' : '#fff', receiptFg: S.txn.receipt ? '#3e4a29' : '#5a6b3b',
+      txnSave: () => { const t = S.txn; if (!t.desc.trim() || !+t.amount) return; this.setState(st => ({ screen: 'money', txns: [{ id: Date.now(), kind: st.txnKind, desc: t.desc, amount: +t.amount, date: t.date, line: t.line, receipt: t.receipt, business: t.business || 'General' }, ...st.txns], docFiles: t.receipt ? [{ icon: '\ud83e\uddfe', name: 'Receipt \u2014 ' + t.desc + '.jpg', meta: 'Jul 17 \u00b7 You \u00b7 Receipts' }, ...st.docFiles] : st.docFiles })); },
+      docFolders: [
+        { icon: '\ud83d\udccb', label: 'Brand inspections', count: S.docFiles.filter(d => d.meta.includes('Brand')).length + ' files' },
+        { icon: '\ud83e\uddfe', label: 'Receipts', count: S.docFiles.filter(d => d.meta.includes('Receipts')).length + ' files' },
+        { icon: '\ud83d\udc89', label: 'Vet records', count: S.docFiles.filter(d => d.meta.includes('Vet')).length + ' files' },
+        { icon: '\ud83d\udee1', label: 'Insurance & titles', count: S.docFiles.filter(d => d.meta.includes('Insurance')).length + ' files' }],
+      docFiles: S.docFiles, hasDocs: S.docFiles.length > 0,
+      docUpload: () => this.setState(st => ({ docFiles: [{ icon: '\ud83d\udccb', name: 'Uploaded document (demo).pdf', meta: 'Jul 17 \u00b7 You \u00b7 Brand inspections' }, ...st.docFiles] })),
+      showEqForm: S.showEqForm, eqFormToggle: () => this.setState(st => ({ showEqForm: !st.showEqForm })),
+      eqForm: S.eqForm, eqChange: e => { const { name, value } = e.target; this.setState(st => ({ eqForm: { ...st.eqForm, [name]: value } })); },
+      eqSave: () => { const f = S.eqForm; if (!f.name.trim()) return; this.setState(st => ({ showEqForm: false, equipment: [...st.equipment, { id: Date.now(), name: f.name, hours: (+f.hours || 0).toLocaleString(), unit: 'hrs/mi', lastService: '' }], eqForm: { name: '', hours: '' } })); },
+      equipment, hasEquipment: S.equipment.length > 0, noEquipment: S.equipment.length === 0,
+      eqEditHours: S.eqEditHours, eqEditHoursChange: e => this.setState({ eqEditHours: e.target.value }),
+      eqEditService: S.eqEditService, eqEditServiceChange: e => this.setState({ eqEditService: e.target.value }),
+      feedback, hasFeedback: S.feedback.length > 0, fbDraft: S.fbDraft,
+      fbChange: e => this.setState({ fbDraft: e.target.value }),
+      fbName: S.fbName, fbNameChange: e => this.setState({ fbName: e.target.value }),
+      fbSend: () => { if (!S.fbDraft.trim() || !S.fbName.trim()) return; this.setState(st => ({ feedback: [{ who: st.fbName.trim(), date: 'Jul 17', text: st.fbDraft, status: 'New' }, ...st.feedback], fbDraft: '' })); },
+      fabOpen: S.fabOpen, fabIcon: S.fabOpen ? '\u00d7' : '+', fabToggle: () => this.setState(st => ({ fabOpen: !st.fabOpen })), fabClose: () => this.setState({ fabOpen: false }),
+      fabActions, tabs
+    };
+  }
+}
+</script>
+</body>
+</html>
