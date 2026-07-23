@@ -1,21 +1,34 @@
-import { useState } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Text, View, Pressable, StyleSheet } from 'react-native';
 import { router, Redirect } from 'expo-router';
 import { useStore } from '@/store/store';
 import { useProfile } from '@/store/authStore';
+import { useOneDriveStore } from '@/store/oneDriveStore';
+import { periodRange, type ReportPeriodMode } from '@/domain/reportPeriod';
+import { transactionsToCsv } from '@/domain/csv';
+import { csvContentToLocalUri } from '@/utils/exportFiles';
 import type { Business } from '@/domain/types';
 import { colors, radii } from '@/theme/tokens';
 import { fonts } from '@/theme/typography';
 import { Screen, Chip, Card, Row, EmptyState, PrimaryButton, OutlineButton } from '@/components/ui';
 
 const BIZ_OPTIONS: (Business | 'All')[] = ['All', 'Cattle', 'Poultry', 'Hogs', 'General'];
+const PERIOD_MODES: ReportPeriodMode[] = ['month', 'quarter', 'year'];
+const PERIOD_MODE_LABEL: Record<ReportPeriodMode, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 
 const fmt = (n: number) => (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US');
 
 export default function MoneyScreen() {
   const transactions = useStore((s) => s.transactions);
-  const isKid = useProfile().role === 'kid';
+  const addDoc = useStore((s) => s.addDoc);
+  const role = useProfile().role;
+  const isKid = role === 'kid';
+  const isAdmin = role === 'admin';
   const [biz, setBiz] = useState<Business | 'All'>('All');
+  const [periodMode, setPeriodMode] = useState<ReportPeriodMode>('month');
+  const [periodOffset, setPeriodOffset] = useState(0);
+  const [exportedMsg, setExportedMsg] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   // Kid mode hides money entirely, not just the ability to add entries.
   if (isKid) return <Redirect href="/more" />;
@@ -28,6 +41,27 @@ export default function MoneyScreen() {
   const net = income - expense;
 
   const sorted = [...bizTxns].sort((a, b) => b.date.localeCompare(a.date));
+
+  const period = useMemo(() => periodRange(periodMode, periodOffset), [periodMode, periodOffset]);
+  const periodTxns = bizTxns.filter((t) => t.date >= period.start && t.date <= period.end);
+
+  const exportPeriodCsv = async () => {
+    setExporting(true);
+    setExportedMsg('');
+    try {
+      const csv = transactionsToCsv(periodTxns);
+      const localUri = await csvContentToLocalUri(csv);
+      const docId = await addDoc({ name: `Farm Finances — ${period.label}.csv`, folder: 'Receipts', localUri });
+      if (docId) {
+        useOneDriveStore.getState().syncPendingDocs();
+        setExportedMsg(`Saved to Docs › Receipts (${periodTxns.length} ${periodTxns.length === 1 ? 'entry' : 'entries'})`);
+      } else {
+        setExportedMsg('Export failed — try again');
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <Screen>
@@ -67,6 +101,40 @@ export default function MoneyScreen() {
         <PrimaryButton label="+ Expense" onPress={() => router.push('/more/money/add?kind=expense')} size="md" style={{ flex: 1 }} />
         <OutlineButton label="+ Income" onPress={() => router.push('/more/money/add?kind=income')} size="md" style={{ flex: 1 }} />
       </View>
+
+      {isAdmin && (
+        <Card style={styles.exportCard}>
+          <Text style={styles.exportTitle}>Export report (admin)</Text>
+          <Text style={styles.exportHelper}>Download a timeline of entries as a CSV — saved into Docs › Receipts, respecting the {biz} filter above.</Text>
+          <View style={styles.chipRow}>
+            {PERIOD_MODES.map((m) => (
+              <Chip
+                key={m}
+                label={PERIOD_MODE_LABEL[m]}
+                selected={periodMode === m}
+                onPress={() => {
+                  setPeriodMode(m);
+                  setPeriodOffset(0);
+                }}
+              />
+            ))}
+          </View>
+          <View style={styles.periodNav}>
+            <Pressable onPress={() => setPeriodOffset((o) => o - 1)} style={styles.navBtn}>
+              <Text style={styles.navBtnText}>‹</Text>
+            </Pressable>
+            <Text style={styles.periodLabel}>{period.label}</Text>
+            <Pressable onPress={() => setPeriodOffset((o) => o + 1)} style={styles.navBtn}>
+              <Text style={styles.navBtnText}>›</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.periodCount}>
+            {periodTxns.length} {periodTxns.length === 1 ? 'entry' : 'entries'} in this period
+          </Text>
+          <PrimaryButton label={exporting ? 'Exporting…' : 'Export CSV'} onPress={exportPeriodCsv} size="md" disabled={exporting} style={{ marginTop: 10 }} />
+          {!!exportedMsg && <Text style={styles.exportedText}>✓ {exportedMsg}</Text>}
+        </Card>
+      )}
 
       <Text style={styles.sectionLabel}>Entries</Text>
       {sorted.length > 0 ? (
@@ -110,6 +178,15 @@ const styles = StyleSheet.create({
   summaryValue: { fontFamily: fonts.displayExtraBold, fontSize: 19, color: '#fff', marginTop: 2 },
   summaryFoot: { fontSize: 11, color: colors.darkCardMuted2, marginTop: 10 },
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  exportCard: { padding: 14, marginTop: 14 },
+  exportTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.ink },
+  exportHelper: { fontSize: 11.5, color: colors.muted, marginTop: 3, marginBottom: 4 },
+  periodNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
+  navBtn: { width: 30, height: 30, borderRadius: 9, backgroundColor: colors.chipBg, alignItems: 'center', justifyContent: 'center' },
+  navBtnText: { fontWeight: '700', color: colors.chipFg },
+  periodLabel: { fontFamily: fonts.displayExtraBold, fontSize: 15, color: colors.ink },
+  periodCount: { fontSize: 11.5, color: colors.muted, marginTop: 6, textAlign: 'center' },
+  exportedText: { textAlign: 'center', fontSize: 12.5, color: colors.success, fontWeight: '700', marginTop: 10 },
   sectionLabel: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,

@@ -11,7 +11,7 @@ import { todayIso } from '@/domain/dates';
 import type { Business, TransactionKind } from '@/domain/types';
 import { colors, radii } from '@/theme/tokens';
 import { fonts } from '@/theme/typography';
-import { Screen, Chip, PrimaryButton } from '@/components/ui';
+import { Screen, Chip, PrimaryButton, CalendarDatePicker } from '@/components/ui';
 
 const BUSINESSES: Business[] = ['Cattle', 'Poultry', 'Hogs', 'General'];
 
@@ -52,7 +52,10 @@ export default function AddTransactionScreen() {
 
   const viewExistingReceipt = async () => {
     if (!existingReceipt?.storagePath) return;
-    const { data, error } = await supabase.storage.from('docs').createSignedUrl(existingReceipt.storagePath, 60);
+    // storagePath is just the doc's bare UUID (no extension — see addDoc's
+    // rationale), so without `download` set to the real display name, the
+    // browser would save it with no filename/extension at all.
+    const { data, error } = await supabase.storage.from('docs').createSignedUrl(existingReceipt.storagePath, 60, { download: existingReceipt.name });
     if (error || !data) return;
     Linking.openURL(data.signedUrl);
   };
@@ -106,7 +109,7 @@ export default function AddTransactionScreen() {
         </View>
         <View style={styles.halfCell}>
           <Text style={styles.fieldLabel}>DATE</Text>
-          <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.faint} style={styles.input} />
+          <CalendarDatePicker value={date} onChange={setDate} />
         </View>
         <View style={styles.fullCell}>
           <Text style={styles.fieldLabel}>BUSINESS</Text>

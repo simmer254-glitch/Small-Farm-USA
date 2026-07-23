@@ -5,14 +5,14 @@ import { useStore } from '@/store/store';
 import { useProfile } from '@/store/authStore';
 import { useGoogleCalendarStore } from '@/store/googleCalendarStore';
 import { buildCalendarMonth } from '@/utils/calendarGrid';
-import { daysUntil, relativeDayLabel, todayIso, parseLocalDate } from '@/domain/dates';
+import { daysUntil, relativeDayLabel, todayIso } from '@/domain/dates';
 import { TASK_TYPE_ICON } from '@/domain/icons';
 import { icsForTask, icsFilename } from '@/domain/ics';
 import { saveAndShareText } from '@/utils/exportFiles';
 import type { Task, TaskType } from '@/domain/types';
 import { colors, radii } from '@/theme/tokens';
 import { fonts } from '@/theme/typography';
-import { Screen, Chip, Card, EmptyState, SectionLabel } from '@/components/ui';
+import { Screen, Chip, Card, EmptyState, SectionLabel, CalendarDatePicker } from '@/components/ui';
 
 const TASK_TYPES: TaskType[] = ['Butcher', 'Maintenance', 'Vaccination', 'Other'];
 
@@ -34,7 +34,6 @@ function formatTime12h(time: string): string {
 
 // '' represents "All day" — every half-hour slot in between.
 const TIME_OPTIONS = ['', ...Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 === 0 ? '00' : '30'}`)];
-const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function CalendarScreen() {
   const params = useLocalSearchParams<{ openForm?: string }>();
@@ -65,30 +64,14 @@ export default function CalendarScreen() {
   const [guestsText, setGuestsText] = useState('');
   const [type, setType] = useState<TaskType>('Butcher');
   const [assignee, setAssignee] = useState<string>('everyone');
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [datePickerOffset, setDatePickerOffset] = useState(0);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
 
   const resetFormExtras = () => {
     setTime('');
     setReminderMinutes(null);
     setGuestsText('');
-    setDatePickerOpen(false);
-    setDatePickerOffset(0);
     setTimePickerOpen(false);
   };
-
-  // The form's own mini date-picker calendar — separate from the screen's
-  // main month view (calOffset above), so browsing months while picking a
-  // date doesn't disturb whatever month the screen itself is showing.
-  const datePickerBase = useMemo(() => {
-    const d = parseLocalDate(date);
-    return new Date(d.getFullYear(), d.getMonth() + datePickerOffset, 1);
-  }, [date, datePickerOffset]);
-  const { monthLabel: datePickerMonthLabel, cells: datePickerCells } = useMemo(
-    () => buildCalendarMonth(datePickerBase.getFullYear(), datePickerBase.getMonth(), tasks, today),
-    [datePickerBase, tasks, today]
-  );
 
   // Opportunistic sync: catches tasks added from a device other than the
   // one holding the Google connection (only that device can actually push
@@ -280,62 +263,12 @@ export default function CalendarScreen() {
 
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
             <View style={{ flex: 1 }}>
-              <Pressable
-                onPress={() => {
-                  setTimePickerOpen(false);
-                  setDatePickerOffset(0);
-                  setDatePickerOpen((o) => !o);
-                }}
-                style={styles.select}>
-                <Text style={styles.selectText}>📅 {date}</Text>
-                <Text style={{ color: colors.muted }}>{datePickerOpen ? '▴' : '▾'}</Text>
-              </Pressable>
-              {datePickerOpen && (
-                <View style={styles.pickerPopup}>
-                  <View style={styles.calHeader}>
-                    <Pressable onPress={() => setDatePickerOffset((o) => o - 1)} style={styles.navBtn}>
-                      <Text style={styles.navBtnText}>‹</Text>
-                    </Pressable>
-                    <Text style={styles.monthLabel}>{datePickerMonthLabel}</Text>
-                    <Pressable onPress={() => setDatePickerOffset((o) => o + 1)} style={styles.navBtn}>
-                      <Text style={styles.navBtnText}>›</Text>
-                    </Pressable>
-                  </View>
-                  <View style={styles.weekdayRow}>
-                    {WEEKDAY_LETTERS.map((d, i) => (
-                      <Text key={i} style={styles.weekdayText}>
-                        {d}
-                      </Text>
-                    ))}
-                  </View>
-                  <View style={styles.grid}>
-                    {datePickerCells.map((c) => {
-                      const isSelected = c.dateKey === date;
-                      return (
-                        <Pressable
-                          key={c.key}
-                          disabled={!c.dateKey}
-                          onPress={() => {
-                            if (!c.dateKey) return;
-                            setDate(c.dateKey);
-                            setDatePickerOpen(false);
-                          }}
-                          style={[styles.cell, isSelected && { backgroundColor: colors.primary }, !isSelected && c.isToday && styles.cellToday]}>
-                          <Text style={[styles.cellDay, { color: isSelected ? '#fff' : colors.ink, fontWeight: isSelected || c.isToday ? '800' : '500' }]}>
-                            {c.day}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-              )}
+              <CalendarDatePicker value={date} onChange={setDate} tasks={tasks} />
             </View>
 
             <View style={{ flex: 1 }}>
               <Pressable
                 onPress={() => {
-                  setDatePickerOpen(false);
                   setTimePickerOpen((o) => !o);
                 }}
                 style={styles.select}>
@@ -507,7 +440,6 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#fff',
   },
-  cellToday: { borderWidth: 1.5, borderColor: colors.primary },
   timeScroll: { maxHeight: 200 },
   optionRow: { paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: colors.divider },
   optionText: { fontSize: 13, color: colors.ink },

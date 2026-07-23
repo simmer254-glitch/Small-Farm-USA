@@ -8,4 +8,5 @@ export { SectionLabel } from './SectionLabel';
 export { Badge, type BadgeTone } from './Badge';
 export { StatGrid, type Stat } from './StatGrid';
 export { TextField, DateField } from './FormField';
+export { CalendarDatePicker } from './CalendarDatePicker';
 export { SpeedDialFab, type FabAction } from './SpeedDialFab';

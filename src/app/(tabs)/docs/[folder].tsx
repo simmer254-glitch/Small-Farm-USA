@@ -30,7 +30,10 @@ export default function DocsFolderScreen() {
 
   const openDoc = async (doc: Doc) => {
     if (!doc.storagePath) return;
-    const { data, error } = await supabase.storage.from('docs').createSignedUrl(doc.storagePath, 60);
+    // storagePath is just the doc's bare UUID (no extension — see addDoc's
+    // rationale), so without `download` set to the real display name, the
+    // browser would save it with no filename/extension at all.
+    const { data, error } = await supabase.storage.from('docs').createSignedUrl(doc.storagePath, 60, { download: doc.name });
     if (error || !data) return;
     Linking.openURL(data.signedUrl);
   };
