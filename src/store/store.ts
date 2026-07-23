@@ -266,6 +266,7 @@ type State = {
   deleteTransaction: (id: string) => Promise<void>;
 
   addTask: (input: { title: string; date: string; type: TaskType; assigneeUserId: string }) => Promise<void>;
+  updateTask: (taskId: string, input: { title: string; date: string; type: TaskType; assigneeUserId: string }) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
@@ -809,6 +810,28 @@ export const useStore = create<State>()((set, get) => ({
     await supabase
       .from('audit_log')
       .insert(auditRow({ actor: actorName, kind: 'Task scheduled', refType: 'task', refId: id, business: 'General', summary: `Scheduled — ${input.title}`, dateOccurred: input.date }));
+  },
+
+  updateTask: async (taskId, input) => {
+    const { name: actorName } = actor();
+    const prev = get().tasks;
+    const existing = prev.find((t) => t.id === taskId);
+    if (!existing) return;
+
+    set((s) => ({ tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, ...input } : t)) }));
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({ title: input.title, date: input.date, type: input.type, assignee_user_id: input.assigneeUserId })
+      .eq('id', taskId);
+    if (error) {
+      set({ tasks: prev });
+      reportError('save that change', error);
+      return;
+    }
+    await supabase
+      .from('audit_log')
+      .insert(auditRow({ actor: actorName, kind: 'Task edited', refType: 'task', refId: taskId, business: 'General', summary: `Edited — ${input.title}`, dateOccurred: input.date }));
   },
 
   toggleTask: async (taskId) => {

@@ -48,3 +48,6 @@ example
 
 # generated report exports from testing the Audit screen
 small-farm-usa-audit-*.csv
+
+# personal notes, likely containing API keys/secrets — never commit these
+PERSONAL API NOTES/

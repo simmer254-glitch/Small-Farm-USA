@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useStore } from '@/store/store';
 import { useAuthStore, useProfile } from '@/store/authStore';
 import { useOneDriveStore } from '@/store/oneDriveStore';
+import { useGoogleCalendarStore } from '@/store/googleCalendarStore';
 import { seedDemoData } from '@/store/devSeed';
 import { colors, radii } from '@/theme/tokens';
 import { fonts } from '@/theme/typography';
@@ -33,6 +34,12 @@ export default function MoreScreen() {
   const syncing = useOneDriveStore((s) => s.syncing);
   const promptAsync = useOneDriveStore((s) => s.promptAsync);
   const syncPendingDocs = useOneDriveStore((s) => s.syncPendingDocs);
+  const gcalConnected = useGoogleCalendarStore((s) => s.connected);
+  const gcalLastSyncAt = useGoogleCalendarStore((s) => s.lastSyncAt);
+  const gcalLastSyncError = useGoogleCalendarStore((s) => s.lastSyncError);
+  const gcalSyncing = useGoogleCalendarStore((s) => s.syncing);
+  const gcalPromptAsync = useGoogleCalendarStore((s) => s.promptAsync);
+  const syncPendingTasks = useGoogleCalendarStore((s) => s.syncPendingTasks);
 
   const [showEqForm, setShowEqForm] = useState(false);
   const [eqName, setEqName] = useState('');
@@ -82,6 +89,7 @@ export default function MoreScreen() {
   const isAdmin = currentUser.role === 'admin';
   const isMemberOrAdmin = currentUser.role !== 'kid';
   const canManageOneDrive = isAdmin && Platform.OS === 'web';
+  const canManageGoogle = isAdmin && Platform.OS === 'web';
   const oneDriveLabel = syncing
     ? 'Syncing…'
     : lastSyncError
@@ -97,6 +105,22 @@ export default function MoreScreen() {
     : connected
       ? () => syncPendingDocs()
       : () => promptAsync?.();
+
+  const gcalLabel = gcalSyncing
+    ? 'Syncing…'
+    : gcalLastSyncError
+      ? 'Sync failed ›'
+      : gcalConnected
+        ? `Connected${gcalLastSyncAt ? ` · synced ${new Date(gcalLastSyncAt).toLocaleDateString()}` : ''} ›`
+        : canManageGoogle
+          ? 'Not connected · Connect ›'
+          : 'Not connected';
+  const gcalColor = gcalLastSyncError ? colors.alertAccent : gcalConnected ? colors.success : colors.muted;
+  const gcalPress = !canManageGoogle
+    ? undefined
+    : gcalConnected
+      ? () => syncPendingTasks()
+      : () => gcalPromptAsync?.();
 
   return (
     <Screen>
@@ -353,6 +377,11 @@ export default function MoreScreen() {
           title="☁️ OneDrive backup"
           onPress={oneDrivePress}
           trailing={<Text style={[styles.plainTrailing, { color: oneDriveColor }]}>{oneDriveLabel}</Text>}
+        />
+        <Row
+          title="📅 Google Calendar"
+          onPress={gcalPress}
+          trailing={<Text style={[styles.plainTrailing, { color: gcalColor }]}>{gcalLabel}</Text>}
         />
         <Row
           title="🚪 Sign out"

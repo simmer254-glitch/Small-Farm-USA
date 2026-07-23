@@ -12,6 +12,7 @@ import {
 import { useStore } from '@/store/store';
 import { useAuthStore, useInitAuth } from '@/store/authStore';
 import { useOneDriveStore, useOneDriveAuthBridge } from '@/store/oneDriveStore';
+import { useGoogleCalendarStore, useGoogleCalendarAuthBridge } from '@/store/googleCalendarStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,11 +32,16 @@ export default function RootLayout() {
   const subscribeRealtime = useStore((s) => s.subscribeRealtime);
   const fetchOneDriveStatus = useOneDriveStore((s) => s.fetchStatus);
   const subscribeOneDriveStatus = useOneDriveStore((s) => s.subscribeStatusRealtime);
+  const fetchGoogleStatus = useGoogleCalendarStore((s) => s.fetchStatus);
+  const subscribeGoogleStatus = useGoogleCalendarStore((s) => s.subscribeStatusRealtime);
   useInitAuth();
   // Mounted at the root, not in the Docs/More screen that triggers it: the
   // redirect back from Microsoft is a full top-level page reload (this app
   // has no SSR), so nothing screen-local would survive it.
   useOneDriveAuthBridge();
+  // Same reasoning as useOneDriveAuthBridge — the redirect back from Google
+  // is also a full top-level page reload.
+  useGoogleCalendarAuthBridge();
 
   // Fetch the shared dataset and open realtime subscriptions once a session
   // exists — not before, since RLS has no anon access. Re-runs if the user
@@ -46,9 +52,12 @@ export default function RootLayout() {
     const unsubscribe = subscribeRealtime();
     fetchOneDriveStatus();
     const unsubscribeOneDrive = subscribeOneDriveStatus();
+    fetchGoogleStatus();
+    const unsubscribeGoogle = subscribeGoogleStatus();
     return () => {
       unsubscribe();
       unsubscribeOneDrive();
+      unsubscribeGoogle();
     };
   }, [session?.user.id]);
 

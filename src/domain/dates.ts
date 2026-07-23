@@ -32,3 +32,13 @@ export function relativeDayLabel(days: number): string {
 export function todayIso(now: number | Date = Date.now()): string {
   return localDateString(now);
 }
+
+// Adds n days to a "YYYY-MM-DD" string, staying in local-date arithmetic
+// throughout (parseLocalDate -> Date.setDate -> localDateString) rather than
+// raw Date/ms math, to avoid the same UTC-parsing pitfall documented above.
+// Needed for Google Calendar's all-day events, whose end date is exclusive.
+export function addDays(dateStr: string, n: number): string {
+  const d = parseLocalDate(dateStr);
+  d.setDate(d.getDate() + n);
+  return localDateString(d);
+}

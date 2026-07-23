@@ -3,6 +3,7 @@ import { Text, View, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/store';
 import { useProfile } from '@/store/authStore';
+import { useGoogleCalendarStore } from '@/store/googleCalendarStore';
 import { buildCalendarMonth } from '@/utils/calendarGrid';
 import { daysUntil, relativeDayLabel, todayIso } from '@/domain/dates';
 import { TASK_TYPE_ICON } from '@/domain/icons';
@@ -21,14 +22,22 @@ export default function CalendarScreen() {
   const users = useStore((s) => s.profiles);
   const currentUser = useProfile();
   const addTask = useStore((s) => s.addTask);
+  const updateTask = useStore((s) => s.updateTask);
   const toggleTask = useStore((s) => s.toggleTask);
   const deleteTask = useStore((s) => s.deleteTask);
+  const gcalConnected = useGoogleCalendarStore((s) => s.connected);
+  const gcalLastSyncAt = useGoogleCalendarStore((s) => s.lastSyncAt);
+  const gcalLastSyncError = useGoogleCalendarStore((s) => s.lastSyncError);
+  const syncPendingTasks = useGoogleCalendarStore((s) => s.syncPendingTasks);
+  const syncTaskUpdate = useGoogleCalendarStore((s) => s.syncTaskUpdate);
+  const deleteTaskEvent = useGoogleCalendarStore((s) => s.deleteTaskEvent);
 
   const isKid = currentUser.role === 'kid';
   const today = todayIso();
   const now = new Date();
   const [calOffset, setCalOffset] = useState(0);
   const [showForm, setShowForm] = useState(params.openForm === '1');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(today);
   const [type, setType] = useState<TaskType>('Butcher');
@@ -51,21 +60,67 @@ export default function CalendarScreen() {
 
   const sortedTasks = [...tasks].sort((a, b) => a.date.localeCompare(b.date));
 
-  const save = () => {
+  const save = async () => {
     if (!title.trim()) return;
-    addTask({ title: title.trim(), date, type, assigneeUserId: assignee });
+    const input = { title: title.trim(), date, type, assigneeUserId: assignee };
+    if (editingTaskId) {
+      await updateTask(editingTaskId, input);
+      const updated = { ...tasks.find((t) => t.id === editingTaskId)!, ...input };
+      // Fire-and-forget — never block the save on a round trip to Google.
+      syncTaskUpdate(updated, assigneeLabel(assignee));
+    } else {
+      await addTask(input);
+      syncPendingTasks();
+    }
     setShowForm(false);
+    setEditingTaskId(null);
     setTitle('');
+  };
+
+  const openEdit = (t: Task) => {
+    if (isKid) return;
+    setEditingTaskId(t.id);
+    setTitle(t.title);
+    setDate(t.date);
+    setType(t.type);
+    setAssignee(t.assigneeUserId);
+    setShowForm(true);
+  };
+
+  const removeTask = async (t: Task) => {
+    await deleteTask(t.id);
+    if (t.gcalEventId) deleteTaskEvent(t.gcalEventId);
   };
 
   const invite = (t: Task) => {
     saveAndShareText(icsFilename(t), icsForTask(t), 'text/calendar');
   };
 
+  const gcalBannerTitle = gcalLastSyncError
+    ? 'Google Calendar sync failed'
+    : gcalConnected
+      ? 'Synced to Google Calendar'
+      : 'Not connected to Google Calendar yet';
+  const gcalBannerSub = gcalLastSyncError
+    ? gcalLastSyncError
+    : gcalConnected
+      ? `Owner's primary calendar${gcalLastSyncAt ? ` · last sync ${new Date(gcalLastSyncAt).toLocaleString()}` : ''}`
+      : 'Tasks stay in the app either way — connect in More › Google Calendar for automatic sync';
+
   return (
     <Screen>
       <Text style={styles.title}>Calendar</Text>
       <Text style={styles.helper}>Anyone can add a task, assign it, and send a calendar invite (.ics).</Text>
+
+      <View style={[styles.banner, gcalLastSyncError && styles.bannerError]}>
+        <View style={[styles.bannerIcon, gcalLastSyncError && styles.bannerIconError]}>
+          <Text style={styles.bannerIconText}>GC</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.bannerTitle, gcalLastSyncError && styles.bannerTitleError]}>{gcalBannerTitle}</Text>
+          <Text style={styles.bannerSub}>{gcalBannerSub}</Text>
+        </View>
+      </View>
 
       <Card style={styles.calCard}>
         <View style={styles.calHeader}>
@@ -91,6 +146,7 @@ export default function CalendarScreen() {
               disabled={!c.dateKey}
               onPress={() => {
                 if (!c.dateKey || isKid) return;
+                setEditingTaskId(null);
                 setDate(c.dateKey);
                 setShowForm(true);
               }}
@@ -104,7 +160,20 @@ export default function CalendarScreen() {
         </View>
       </Card>
 
-      <SectionLabel label="Upcoming" action={isKid ? undefined : { label: '+ Add task', onPress: () => setShowForm((s) => !s) }} />
+      <SectionLabel
+        label="Upcoming"
+        action={
+          isKid
+            ? undefined
+            : {
+                label: showForm ? '× Close' : '+ Add task',
+                onPress: () => {
+                  setEditingTaskId(null);
+                  setShowForm((s) => !s);
+                },
+              }
+        }
+      />
 
       {showForm && !isKid && (
         <Card style={styles.formCard}>
@@ -130,7 +199,7 @@ export default function CalendarScreen() {
             <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.faint} style={[styles.input, { width: 130 }]} />
           </View>
           <Pressable onPress={save} style={styles.formSaveBtn}>
-            <Text style={styles.formSaveLabel}>Add to calendar</Text>
+            <Text style={styles.formSaveLabel}>{editingTaskId ? 'Save changes' : 'Add to calendar'}</Text>
           </Pressable>
         </Card>
       )}
@@ -155,7 +224,7 @@ export default function CalendarScreen() {
                 <View style={styles.taskTypeIcon}>
                   <Text style={{ fontSize: 13 }}>{TASK_TYPE_ICON[t.type]}</Text>
                 </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
+                <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => openEdit(t)} disabled={isKid}>
                   <Text
                     numberOfLines={1}
                     style={[
@@ -166,13 +235,14 @@ export default function CalendarScreen() {
                   </Text>
                   <Text numberOfLines={1} style={styles.taskSub}>
                     {when} · for {assigneeLabel(t.assigneeUserId)} · by {users.find((u) => u.id === t.creatorUserId)?.name || t.creatorUserId}
+                    {t.gcalEventId ? ' · 📅 synced' : ''}
                   </Text>
-                </View>
+                </Pressable>
                 <Pressable onPress={() => invite(t)} style={styles.inviteBtn}>
                   <Text style={styles.inviteLabel}>📆 Invite</Text>
                 </Pressable>
                 {currentUser.role === 'admin' && (
-                  <Pressable onPress={() => deleteTask(t.id)} hitSlop={8} style={{ padding: 4 }}>
+                  <Pressable onPress={() => removeTask(t)} hitSlop={8} style={{ padding: 4 }}>
                     <Text style={{ color: colors.faint, fontSize: 15 }}>✕</Text>
                   </Pressable>
                 )}
@@ -194,6 +264,24 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   title: { fontFamily: fonts.displayExtraBold, fontSize: 21, color: colors.ink },
   helper: { fontSize: 12.5, color: colors.muted, marginTop: 3 },
+  banner: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    backgroundColor: colors.docsBannerBg,
+    borderWidth: 1,
+    borderColor: colors.docsBannerBorder,
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 14,
+  },
+  bannerError: { backgroundColor: colors.alertTint, borderColor: colors.alertAccent },
+  bannerIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: colors.petAccent, alignItems: 'center', justifyContent: 'center' },
+  bannerIconError: { backgroundColor: colors.alertAccent },
+  bannerIconText: { color: '#fff', fontWeight: '800', fontSize: 12 },
+  bannerTitle: { fontWeight: '700', fontSize: 12.5, color: colors.petInk },
+  bannerTitleError: { color: colors.alertAccent },
+  bannerSub: { fontSize: 11.5, color: colors.petMuted },
   calCard: { padding: 14, marginTop: 14 },
   calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   navBtn: { width: 30, height: 30, borderRadius: 9, backgroundColor: colors.chipBg, alignItems: 'center', justifyContent: 'center' },
