@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
-import { Text, View, TextInput, Pressable, StyleSheet } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Text, View, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/store';
 import { useProfile } from '@/store/authStore';
 import { useGoogleCalendarStore } from '@/store/googleCalendarStore';
 import { buildCalendarMonth } from '@/utils/calendarGrid';
-import { daysUntil, relativeDayLabel, todayIso } from '@/domain/dates';
+import { daysUntil, relativeDayLabel, todayIso, parseLocalDate } from '@/domain/dates';
 import { TASK_TYPE_ICON } from '@/domain/icons';
 import { icsForTask, icsFilename } from '@/domain/ics';
 import { saveAndShareText } from '@/utils/exportFiles';
@@ -15,6 +15,26 @@ import { fonts } from '@/theme/typography';
 import { Screen, Chip, Card, EmptyState, SectionLabel } from '@/components/ui';
 
 const TASK_TYPES: TaskType[] = ['Butcher', 'Maintenance', 'Vaccination', 'Other'];
+
+const REMINDER_OPTIONS: { minutes: number | null; label: string }[] = [
+  { minutes: null, label: 'None' },
+  { minutes: 0, label: 'At time' },
+  { minutes: 10, label: '10 min before' },
+  { minutes: 30, label: '30 min before' },
+  { minutes: 60, label: '1 hour before' },
+  { minutes: 1440, label: '1 day before' },
+];
+
+function formatTime12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+// '' represents "All day" — every half-hour slot in between.
+const TIME_OPTIONS = ['', ...Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 === 0 ? '00' : '30'}`)];
+const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function CalendarScreen() {
   const params = useLocalSearchParams<{ openForm?: string }>();
@@ -40,8 +60,45 @@ export default function CalendarScreen() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(today);
+  const [time, setTime] = useState('');
+  const [reminderMinutes, setReminderMinutes] = useState<number | null>(null);
+  const [guestsText, setGuestsText] = useState('');
   const [type, setType] = useState<TaskType>('Butcher');
   const [assignee, setAssignee] = useState<string>('everyone');
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [datePickerOffset, setDatePickerOffset] = useState(0);
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
+
+  const resetFormExtras = () => {
+    setTime('');
+    setReminderMinutes(null);
+    setGuestsText('');
+    setDatePickerOpen(false);
+    setDatePickerOffset(0);
+    setTimePickerOpen(false);
+  };
+
+  // The form's own mini date-picker calendar — separate from the screen's
+  // main month view (calOffset above), so browsing months while picking a
+  // date doesn't disturb whatever month the screen itself is showing.
+  const datePickerBase = useMemo(() => {
+    const d = parseLocalDate(date);
+    return new Date(d.getFullYear(), d.getMonth() + datePickerOffset, 1);
+  }, [date, datePickerOffset]);
+  const { monthLabel: datePickerMonthLabel, cells: datePickerCells } = useMemo(
+    () => buildCalendarMonth(datePickerBase.getFullYear(), datePickerBase.getMonth(), tasks, today),
+    [datePickerBase, tasks, today]
+  );
+
+  // Opportunistic sync: catches tasks added from a device other than the
+  // one holding the Google connection (only that device can actually push
+  // to Google), same pattern already used on the Docs screen for OneDrive.
+  // No true background sync — this only fires while the connected device
+  // happens to have Calendar open.
+  const pendingTaskCount = tasks.filter((t) => !t.gcalEventId).length;
+  useEffect(() => {
+    if (gcalConnected && pendingTaskCount > 0) syncPendingTasks();
+  }, [gcalConnected, pendingTaskCount]);
 
   const base = new Date(now.getFullYear(), now.getMonth() + calOffset, 1);
   const { monthLabel, cells } = useMemo(
@@ -62,7 +119,20 @@ export default function CalendarScreen() {
 
   const save = async () => {
     if (!title.trim()) return;
-    const input = { title: title.trim(), date, type, assigneeUserId: assignee };
+    const input = {
+      title: title.trim(),
+      date,
+      time: time.trim() || undefined,
+      reminderMinutes: reminderMinutes ?? undefined,
+      guestEmails: guestsText.trim()
+        ? guestsText
+            .split(',')
+            .map((e) => e.trim())
+            .filter(Boolean)
+        : undefined,
+      type,
+      assigneeUserId: assignee,
+    };
     if (editingTaskId) {
       await updateTask(editingTaskId, input);
       const updated = { ...tasks.find((t) => t.id === editingTaskId)!, ...input };
@@ -75,6 +145,7 @@ export default function CalendarScreen() {
     setShowForm(false);
     setEditingTaskId(null);
     setTitle('');
+    resetFormExtras();
   };
 
   const openEdit = (t: Task) => {
@@ -82,6 +153,9 @@ export default function CalendarScreen() {
     setEditingTaskId(t.id);
     setTitle(t.title);
     setDate(t.date);
+    setTime(t.time ?? '');
+    setReminderMinutes(t.reminderMinutes ?? null);
+    setGuestsText((t.guestEmails ?? []).join(', '));
     setType(t.type);
     setAssignee(t.assigneeUserId);
     setShowForm(true);
@@ -89,7 +163,13 @@ export default function CalendarScreen() {
 
   const removeTask = async (t: Task) => {
     await deleteTask(t.id);
-    if (t.gcalEventId) deleteTaskEvent(t.gcalEventId);
+    if (t.gcalEventId) {
+      // Mirrors buildAttendees' logic in googleCalendarStore.ts — only a
+      // real (non-sentinel) assignee that actually resolves to a profile
+      // would have been added as an attendee in the first place.
+      const hasAssigneeAttendee = t.assigneeUserId !== 'everyone' && t.assigneeUserId !== 'kids' && users.some((u) => u.id === t.assigneeUserId);
+      deleteTaskEvent(t.gcalEventId, hasAssigneeAttendee || !!t.guestEmails?.length);
+    }
   };
 
   const invite = (t: Task) => {
@@ -147,6 +227,7 @@ export default function CalendarScreen() {
               onPress={() => {
                 if (!c.dateKey || isKid) return;
                 setEditingTaskId(null);
+                resetFormExtras();
                 setDate(c.dateKey);
                 setShowForm(true);
               }}
@@ -169,6 +250,7 @@ export default function CalendarScreen() {
                 label: showForm ? '× Close' : '+ Add task',
                 onPress: () => {
                   setEditingTaskId(null);
+                  resetFormExtras();
                   setShowForm((s) => !s);
                 },
               }
@@ -188,16 +270,116 @@ export default function CalendarScreen() {
               <Chip key={o.key} label={o.label} selected={assignee === o.key} onPress={() => setAssignee(o.key)} />
             ))}
           </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder="e.g. Butcher pigs P-14, P-15"
-              placeholderTextColor={colors.faint}
-              style={[styles.input, { flex: 1 }]}
-            />
-            <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.faint} style={[styles.input, { width: 130 }]} />
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder="e.g. Butcher pigs P-14, P-15"
+            placeholderTextColor={colors.faint}
+            style={styles.input}
+          />
+
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+            <View style={{ flex: 1 }}>
+              <Pressable
+                onPress={() => {
+                  setTimePickerOpen(false);
+                  setDatePickerOffset(0);
+                  setDatePickerOpen((o) => !o);
+                }}
+                style={styles.select}>
+                <Text style={styles.selectText}>📅 {date}</Text>
+                <Text style={{ color: colors.muted }}>{datePickerOpen ? '▴' : '▾'}</Text>
+              </Pressable>
+              {datePickerOpen && (
+                <View style={styles.pickerPopup}>
+                  <View style={styles.calHeader}>
+                    <Pressable onPress={() => setDatePickerOffset((o) => o - 1)} style={styles.navBtn}>
+                      <Text style={styles.navBtnText}>‹</Text>
+                    </Pressable>
+                    <Text style={styles.monthLabel}>{datePickerMonthLabel}</Text>
+                    <Pressable onPress={() => setDatePickerOffset((o) => o + 1)} style={styles.navBtn}>
+                      <Text style={styles.navBtnText}>›</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.weekdayRow}>
+                    {WEEKDAY_LETTERS.map((d, i) => (
+                      <Text key={i} style={styles.weekdayText}>
+                        {d}
+                      </Text>
+                    ))}
+                  </View>
+                  <View style={styles.grid}>
+                    {datePickerCells.map((c) => {
+                      const isSelected = c.dateKey === date;
+                      return (
+                        <Pressable
+                          key={c.key}
+                          disabled={!c.dateKey}
+                          onPress={() => {
+                            if (!c.dateKey) return;
+                            setDate(c.dateKey);
+                            setDatePickerOpen(false);
+                          }}
+                          style={[styles.cell, isSelected && { backgroundColor: colors.primary }, !isSelected && c.isToday && styles.cellToday]}>
+                          <Text style={[styles.cellDay, { color: isSelected ? '#fff' : colors.ink, fontWeight: isSelected || c.isToday ? '800' : '500' }]}>
+                            {c.day}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Pressable
+                onPress={() => {
+                  setDatePickerOpen(false);
+                  setTimePickerOpen((o) => !o);
+                }}
+                style={styles.select}>
+                <Text style={styles.selectText}>🕐 {time ? formatTime12h(time) : 'All day'}</Text>
+                <Text style={{ color: colors.muted }}>{timePickerOpen ? '▴' : '▾'}</Text>
+              </Pressable>
+              {timePickerOpen && (
+                <View style={styles.pickerPopup}>
+                  <ScrollView style={styles.timeScroll} nestedScrollEnabled>
+                    {TIME_OPTIONS.map((opt) => (
+                      <Pressable
+                        key={opt || 'all-day'}
+                        onPress={() => {
+                          setTime(opt);
+                          setTimePickerOpen(false);
+                        }}
+                        style={styles.optionRow}>
+                        <Text style={[styles.optionText, opt === time && { color: colors.primary, fontWeight: '700' }]}>
+                          {opt ? formatTime12h(opt) : 'All day'}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
           </View>
+
+          <View style={[styles.chipWrap, { alignItems: 'center', marginTop: 10 }]}>
+            <Text style={styles.forLabel}>REMIND</Text>
+            {REMINDER_OPTIONS.map((o) => (
+              <Chip key={String(o.minutes)} label={o.label} selected={reminderMinutes === o.minutes} onPress={() => setReminderMinutes(o.minutes)} />
+            ))}
+          </View>
+          <TextInput
+            value={guestsText}
+            onChangeText={setGuestsText}
+            placeholder="Guest emails, comma-separated (optional)"
+            placeholderTextColor={colors.faint}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={styles.input}
+          />
+          <Text style={styles.guestHelper}>They'll get a real Google Calendar invite once this syncs.</Text>
           <Pressable onPress={save} style={styles.formSaveBtn}>
             <Text style={styles.formSaveLabel}>{editingTaskId ? 'Save changes' : 'Add to calendar'}</Text>
           </Pressable>
@@ -208,7 +390,7 @@ export default function CalendarScreen() {
         <Card>
           {sortedTasks.map((t, i) => {
             const days = daysUntil(t.date);
-            const when = `${t.date} (${days === 0 ? 'today' : days > 0 ? `in ${days}d` : `${-days}d ago`})`;
+            const when = `${t.date}${t.time ? ` · ${formatTime12h(t.time)}` : ''} (${days === 0 ? 'today' : days > 0 ? `in ${days}d` : `${-days}d ago`})`;
             return (
               <View
                 key={t.id}
@@ -236,6 +418,7 @@ export default function CalendarScreen() {
                   <Text numberOfLines={1} style={styles.taskSub}>
                     {when} · for {assigneeLabel(t.assigneeUserId)} · by {users.find((u) => u.id === t.creatorUserId)?.name || t.creatorUserId}
                     {t.gcalEventId ? ' · 📅 synced' : ''}
+                    {t.guestEmails?.length ? ` · 👥 ${t.guestEmails.length}` : ''}
                   </Text>
                 </Pressable>
                 <Pressable onPress={() => invite(t)} style={styles.inviteBtn}>
@@ -305,6 +488,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     color: colors.ink,
   },
+  select: {
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
+    borderRadius: radii.inputSm,
+    padding: 11,
+    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  selectText: { fontSize: 13, color: colors.ink },
+  pickerPopup: {
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
+    borderRadius: radii.inputSm,
+    marginTop: 6,
+    padding: 8,
+    backgroundColor: '#fff',
+  },
+  cellToday: { borderWidth: 1.5, borderColor: colors.primary },
+  timeScroll: { maxHeight: 200 },
+  optionRow: { paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  optionText: { fontSize: 13, color: colors.ink },
+  guestHelper: { fontSize: 11, color: colors.muted, marginTop: 4 },
   formSaveBtn: { backgroundColor: colors.primary, borderRadius: 12, padding: 12, alignItems: 'center', marginTop: 10 },
   formSaveLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
   inviteBtn: { borderWidth: 1.5, borderColor: colors.primary, borderRadius: 9, paddingVertical: 5, paddingHorizontal: 8 },

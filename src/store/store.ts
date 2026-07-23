@@ -98,6 +98,9 @@ function taskFromRow(row: any): Task {
     id: row.id,
     title: row.title,
     date: row.date,
+    time: row.time ?? undefined,
+    reminderMinutes: row.reminder_minutes ?? undefined,
+    guestEmails: row.guest_emails ? row.guest_emails.split(',').map((e: string) => e.trim()).filter(Boolean) : undefined,
     type: row.type,
     assigneeUserId: row.assignee_user_id,
     creatorUserId: row.creator_user_id,
@@ -265,8 +268,19 @@ type State = {
   ) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 
-  addTask: (input: { title: string; date: string; type: TaskType; assigneeUserId: string }) => Promise<void>;
-  updateTask: (taskId: string, input: { title: string; date: string; type: TaskType; assigneeUserId: string }) => Promise<void>;
+  addTask: (input: {
+    title: string;
+    date: string;
+    time?: string;
+    reminderMinutes?: number;
+    guestEmails?: string[];
+    type: TaskType;
+    assigneeUserId: string;
+  }) => Promise<void>;
+  updateTask: (
+    taskId: string,
+    input: { title: string; date: string; time?: string; reminderMinutes?: number; guestEmails?: string[]; type: TaskType; assigneeUserId: string }
+  ) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
@@ -797,6 +811,9 @@ export const useStore = create<State>()((set, get) => ({
       id,
       title: input.title,
       date: input.date,
+      time: input.time ?? null,
+      reminder_minutes: input.reminderMinutes ?? null,
+      guest_emails: input.guestEmails?.length ? input.guestEmails.join(',') : null,
       type: input.type,
       assignee_user_id: input.assigneeUserId,
       creator_user_id: creatorUserId,
@@ -822,7 +839,15 @@ export const useStore = create<State>()((set, get) => ({
 
     const { error } = await supabase
       .from('tasks')
-      .update({ title: input.title, date: input.date, type: input.type, assignee_user_id: input.assigneeUserId })
+      .update({
+        title: input.title,
+        date: input.date,
+        time: input.time ?? null,
+        reminder_minutes: input.reminderMinutes ?? null,
+        guest_emails: input.guestEmails?.length ? input.guestEmails.join(',') : null,
+        type: input.type,
+        assignee_user_id: input.assigneeUserId,
+      })
       .eq('id', taskId);
     if (error) {
       set({ tasks: prev });

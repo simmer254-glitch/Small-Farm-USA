@@ -69,6 +69,9 @@ export type Task = {
   id: string;
   title: string;
   date: string;
+  time?: string; // "HH:MM", 24-hour, local — unset means an all-day task
+  reminderMinutes?: number; // minutes before the event; 0 = at time of event; unset = no reminder
+  guestEmails?: string[]; // additional Google Calendar invite emails, beyond the assignee
   type: TaskType;
   assigneeUserId: 'everyone' | string;
   creatorUserId: string;

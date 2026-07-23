@@ -16,10 +16,20 @@ import {
   loadTokens,
 } from '@/lib/googleAuth';
 import { createEvent, updateEvent, deleteEvent, type EventInput } from '@/lib/googleCalendar';
-import type { Task } from '@/domain/types';
+import type { Task, User } from '@/domain/types';
 
 function taskDescription(task: Task, assigneeLabel: string): string {
   return `Small Farm USA · ${task.type} · for ${assigneeLabel}`;
+}
+
+// Per the owner's confirmed preference: a task assigned to a specific family
+// member (not the 'everyone'/'kids' sentinels) automatically invites that
+// person using their app sign-in email, on top of any manually-typed guests.
+function buildAttendees(task: Task, profiles: User[]): string[] {
+  const assigneeEmail =
+    task.assigneeUserId !== 'everyone' && task.assigneeUserId !== 'kids' ? profiles.find((p) => p.id === task.assigneeUserId)?.email : undefined;
+  const emails = [assigneeEmail, ...(task.guestEmails ?? [])].filter((e): e is string => !!e);
+  return Array.from(new Set(emails));
 }
 
 type GoogleCalendarState = {
@@ -34,7 +44,7 @@ type GoogleCalendarState = {
   subscribeStatusRealtime: () => () => void;
   syncPendingTasks: () => Promise<void>;
   syncTaskUpdate: (task: Task, assigneeLabel: string) => Promise<void>;
-  deleteTaskEvent: (eventId: string) => Promise<void>;
+  deleteTaskEvent: (eventId: string, hadAttendees?: boolean) => Promise<void>;
   disconnect: () => Promise<void>;
 };
 
@@ -110,7 +120,14 @@ export const useGoogleCalendarStore = create<GoogleCalendarState>()((set, get) =
       const failures: string[] = [];
       for (const task of pending) {
         try {
-          const input: EventInput = { title: task.title, date: task.date, description: taskDescription(task, assigneeLabel(task.assigneeUserId)) };
+          const input: EventInput = {
+            title: task.title,
+            date: task.date,
+            time: task.time,
+            reminderMinutes: task.reminderMinutes,
+            description: taskDescription(task, assigneeLabel(task.assigneeUserId)),
+            attendees: buildAttendees(task, profiles),
+          };
           const { eventId } = await createEvent(accessToken, input);
           await supabase.from('tasks').update({ gcal_event_id: eventId }).eq('id', task.id);
         } catch (e) {
@@ -142,7 +159,15 @@ export const useGoogleCalendarStore = create<GoogleCalendarState>()((set, get) =
     try {
       const accessToken = await getValidAccessToken();
       if (!accessToken) return; // same expiry handling as syncPendingTasks, but a single-task patch isn't worth flipping global "connected" state over
-      await updateEvent(accessToken, task.gcalEventId, { title: task.title, date: task.date, description: taskDescription(task, assigneeLabel) });
+      const profiles = useStore.getState().profiles;
+      await updateEvent(accessToken, task.gcalEventId, {
+        title: task.title,
+        date: task.date,
+        time: task.time,
+        reminderMinutes: task.reminderMinutes,
+        description: taskDescription(task, assigneeLabel),
+        attendees: buildAttendees(task, profiles),
+      });
     } catch {
       // Best-effort — a failed patch here isn't worth surfacing as a global
       // sync error; the next full syncPendingTasks pass isn't applicable
@@ -150,13 +175,13 @@ export const useGoogleCalendarStore = create<GoogleCalendarState>()((set, get) =
     }
   },
 
-  deleteTaskEvent: async (eventId) => {
+  deleteTaskEvent: async (eventId, hadAttendees = false) => {
     const tokens = await loadTokens();
     if (!tokens) return; // not the connected device — event is left orphaned, an accepted known gap (see plan)
     try {
       const accessToken = await getValidAccessToken();
       if (!accessToken) return;
-      await deleteEvent(accessToken, eventId);
+      await deleteEvent(accessToken, eventId, hadAttendees);
     } catch {
       // Best-effort, same reasoning as syncTaskUpdate.
     }
