@@ -14,6 +14,7 @@ const BADGE_LABEL: Record<BadgeTone, string> = {
   action: 'Action',
   sold: 'Sold',
   butchered: 'Butchered',
+  dead: 'Dead',
   pet: 'Pet',
   new: 'New',
   planned: 'Planned',
@@ -118,7 +119,7 @@ export default function AnimalsScreen() {
       ) : (
         <View style={styles.petEmpty}>
           <Text style={styles.petEmptyText}>
-            Dogs, barn cats, horses — kept separate from livestock. Add one via "+ New animal" › Pet / working.
+            Dogs, barn cats, horses — kept separate from livestock. Add one via "+ New animal" › Pet.
           </Text>
         </View>
       )}

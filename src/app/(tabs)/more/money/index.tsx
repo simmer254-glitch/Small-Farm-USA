@@ -34,7 +34,7 @@ export default function MoneyScreen() {
       <Text style={styles.backLink} onPress={() => router.push('/more')}>
         ‹ More
       </Text>
-      <Text style={styles.title}>Money</Text>
+      <Text style={styles.title}>Farm Finances</Text>
       <Text style={styles.helper}>Every entry maps to a Schedule F line for tax time</Text>
 
       <View style={styles.chipRow}>

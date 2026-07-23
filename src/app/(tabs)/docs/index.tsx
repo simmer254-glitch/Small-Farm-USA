@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Text, View, Pressable, Linking, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useStore } from '@/store/store';
 import { useProfile } from '@/store/authStore';
@@ -82,7 +83,10 @@ export default function DocsScreen() {
         {FOLDERS.map((f) => {
           const count = docs.filter((d) => d.folder === f.key).length;
           return (
-            <Pressable key={f.key} onPress={() => upload(f.key)} style={({ pressed }) => [styles.folderCard, pressed && styles.folderCardPressed]}>
+            <Pressable
+              key={f.key}
+              onPress={() => router.push({ pathname: '/docs/[folder]', params: { folder: f.key } })}
+              style={({ pressed }) => [styles.folderCard, pressed && styles.folderCardPressed]}>
               <Text style={{ fontSize: 22 }}>{f.icon}</Text>
               <Text style={styles.folderLabel}>{f.key}</Text>
               <Text style={styles.folderCount}>{count} file{count === 1 ? '' : 's'}</Text>

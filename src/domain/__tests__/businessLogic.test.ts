@@ -1,4 +1,4 @@
-import { ageMo, ageLabel, lastWeight, suggestionFor, businessForSpecies } from '../businessLogic';
+import { ageMo, ageLabel, lastWeight, suggestionFor, businessForSpecies, animalBadgeTone } from '../businessLogic';
 import type { Animal } from '../types';
 
 const NOW = new Date('2026-07-17T00:00:00Z');
@@ -113,6 +113,11 @@ describe('suggestionFor', () => {
   test('butchered animals never get a suggestion', () => {
     const a = makeAnimal({ species: 'pig', born: monthsAgo(6), status: 'butchered' });
     expect(suggestionFor(a, NOW)).toBeNull();
+  });
+  test('dead animals never get a suggestion, and badge tone is "dead"', () => {
+    const a = makeAnimal({ species: 'cattle', sex: 'Steer', born: monthsAgo(19), status: 'dead' });
+    expect(suggestionFor(a, NOW)).toBeNull();
+    expect(animalBadgeTone(a, NOW)).toBe('dead');
   });
 });
 

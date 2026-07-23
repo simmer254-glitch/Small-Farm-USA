@@ -16,6 +16,7 @@ import type {
   Equipment,
   EquipmentServiceRecord,
   Feedback,
+  PendingInvite,
   Task,
   TaskType,
   Transaction,
@@ -141,8 +142,17 @@ function feedbackFromRow(row: any): Feedback {
   };
 }
 
+function pendingInviteFromRow(row: any): PendingInvite {
+  return {
+    email: row.email,
+    role: row.role,
+    invitedBy: row.invited_by ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
 function profileFromRow(row: any): User {
-  return { id: row.id, name: row.name, email: row.email, role: row.role };
+  return { id: row.id, name: row.name, email: row.email, role: row.role, removedAt: row.removed_at ?? undefined };
 }
 
 function auditFromRow(row: any): AuditEntry {
@@ -216,6 +226,7 @@ type State = {
   chores: Chore[];
   docs: Doc[];
   feedback: Feedback[];
+  pendingInvites: PendingInvite[];
   auditLog: AuditEntry[];
   selectedAuctionKey: string;
   auctions: typeof seedAuctions;
@@ -227,6 +238,8 @@ type State = {
   addAnimalEvent: (animalId: string, type: Extract<AnimalEventType, 'weight' | 'vax' | 'note'>, value: string) => Promise<void>;
   markSold: (animalId: string, buyer: string, price: number) => Promise<void>;
   markButchered: (animalId: string) => Promise<void>;
+  markDead: (animalId: string) => Promise<void>;
+  updateAnimal: (animalId: string, input: NewAnimalInput) => Promise<void>;
   deleteAnimal: (animalId: string) => Promise<void>;
 
   addTransaction: (input: {
@@ -260,14 +273,20 @@ type State = {
 
   addEquipment: (name: string, hours: string) => Promise<void>;
   updateEquipmentService: (equipmentId: string, hours: string, note: string) => Promise<void>;
+  updateEquipment: (equipmentId: string, name: string, unit: string) => Promise<void>;
+  deleteEquipment: (equipmentId: string) => Promise<void>;
 
   addFeedback: (who: string, text: string) => Promise<void>;
+  updateFeedback: (feedbackId: string, text: string) => Promise<void>;
+  deleteFeedback: (feedbackId: string) => Promise<void>;
 
   addDoc: (input: { name: string; folder: DocFolder; localUri?: string }) => Promise<string>;
   deleteDoc: (docId: string) => Promise<void>;
 
   invite: (email: string, role: User['role']) => Promise<{ error: string | null }>;
   setUserRole: (userId: string, role: User['role']) => Promise<{ error: string | null }>;
+  cancelInvite: (email: string) => Promise<void>;
+  removeFamilyMember: (userId: string) => Promise<{ error: string | null }>;
 
   setAuction: (key: string) => void;
 };
@@ -282,12 +301,13 @@ export const useStore = create<State>()((set, get) => ({
   chores: [],
   docs: [],
   feedback: [],
+  pendingInvites: [],
   auditLog: [],
   selectedAuctionKey: 'sterling',
   auctions: seedAuctions,
 
   fetchAll: async () => {
-    const [profilesQ, animalsQ, eventsQ, txnsQ, tasksQ, equipmentQ, recordsQ, choresQ, docsQ, feedbackQ, auditQ] = await Promise.all([
+    const [profilesQ, animalsQ, eventsQ, txnsQ, tasksQ, equipmentQ, recordsQ, choresQ, docsQ, feedbackQ, pendingInvitesQ, auditQ] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('animals').select('*'),
       supabase.from('animal_events').select('*'),
@@ -298,6 +318,7 @@ export const useStore = create<State>()((set, get) => ({
       supabase.from('chores').select('*'),
       supabase.from('docs').select('*'),
       supabase.from('feedback').select('*'),
+      supabase.from('pending_invites').select('*'),
       supabase.from('audit_log').select('*'),
     ]);
 
@@ -329,6 +350,7 @@ export const useStore = create<State>()((set, get) => ({
       chores: (choresQ.data ?? []).map(choreFromRow),
       docs: (docsQ.data ?? []).map(docFromRow),
       feedback: (feedbackQ.data ?? []).map(feedbackFromRow),
+      pendingInvites: (pendingInvitesQ.data ?? []).map(pendingInviteFromRow),
       auditLog: (auditQ.data ?? []).map(auditFromRow),
       loaded: true,
     });
@@ -403,6 +425,23 @@ export const useStore = create<State>()((set, get) => ({
         set((s) => {
           if (payload.eventType === 'DELETE') return { feedback: removeById(s.feedback, (payload.old as any).id) };
           return { feedback: upsertById(s.feedback, feedbackFromRow(payload.new)) };
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_invites' }, (payload) => {
+        // Keyed by email, not id — pending_invites has no id column, so the
+        // generic upsertById/removeById helpers (which require `{ id }`)
+        // don't apply here.
+        set((s) => {
+          if (payload.eventType === 'DELETE') {
+            const email = (payload.old as any).email;
+            return { pendingInvites: s.pendingInvites.filter((i) => i.email !== email) };
+          }
+          const invite = pendingInviteFromRow(payload.new);
+          const idx = s.pendingInvites.findIndex((i) => i.email === invite.email);
+          if (idx === -1) return { pendingInvites: [invite, ...s.pendingInvites] };
+          const next = s.pendingInvites.slice();
+          next[idx] = invite;
+          return { pendingInvites: next };
         });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_log' }, (payload) => {
@@ -585,6 +624,75 @@ export const useStore = create<State>()((set, get) => ({
     await supabase
       .from('audit_log')
       .insert(auditRow({ actor: actorName, kind: 'butchered', refType: 'animal', refId: animalId, business, summary: `${animal.name || '#' + animal.tag} — Marked butchered`, dateOccurred: dateStr }));
+  },
+
+  markDead: async (animalId) => {
+    const { name: actorName } = actor();
+    const dateStr = localDateString();
+    const animal = get().animals.find((a) => a.id === animalId);
+    if (!animal) return;
+    const event: AnimalEvent = { id: makeId(), date: dateStr, type: 'dead', title: 'Marked dead', actor: actorName };
+    const business = businessForSpecies(animal.species);
+
+    set((s) => ({
+      animals: s.animals.map((a) => (a.id === animalId ? { ...a, status: 'dead' as const, events: [event, ...a.events] } : a)),
+    }));
+
+    const { error } = await supabase.from('animals').update({ status: 'dead' }).eq('id', animalId);
+    if (error) {
+      reportError('mark that animal dead', error);
+      return;
+    }
+    await supabase.from('animal_events').insert({ id: event.id, animal_id: animalId, date: event.date, type: event.type, title: event.title, actor: event.actor });
+    await supabase
+      .from('audit_log')
+      .insert(auditRow({ actor: actorName, kind: 'dead', refType: 'animal', refId: animalId, business, summary: `${animal.name || '#' + animal.tag} — Marked dead`, dateOccurred: dateStr }));
+  },
+
+  updateAnimal: async (animalId, input) => {
+    const { name: actorName } = actor();
+    const prev = get().animals;
+    const existing = prev.find((a) => a.id === animalId);
+    if (!existing) return;
+    const business = input.cls === 'pet' ? 'General' : businessForSpecies(input.species);
+
+    // Same cls-based field-filling as addAnimal — pets never carry a real
+    // tag/sex/dam/count, so editing a pet must keep writing the same
+    // placeholders addAnimal does, not leave them blank.
+    const fields =
+      input.cls === 'pet'
+        ? { cls: 'pet' as const, species: input.species, tag: input.name, name: input.name, sex: '—', born: input.born, color: input.color || '—', dam: '—', count: 1 }
+        : {
+            cls: 'livestock' as const,
+            species: input.species,
+            tag: input.tag,
+            name: input.name,
+            sex: input.sex,
+            born: input.born,
+            color: input.color || '—',
+            dam: input.dam || '—',
+            count: input.count || 1,
+          };
+
+    set((s) => ({ animals: s.animals.map((a) => (a.id === animalId ? { ...a, ...fields } : a)) }));
+
+    const { error } = await supabase.from('animals').update(fields).eq('id', animalId);
+    if (error) {
+      set({ animals: prev });
+      reportError('save that change', error);
+      return;
+    }
+    await supabase.from('audit_log').insert(
+      auditRow({
+        actor: actorName,
+        kind: 'Animal edited',
+        refType: 'animal',
+        refId: animalId,
+        business,
+        summary: `${fields.name || '#' + fields.tag} — record edited`,
+        dateOccurred: localDateString(),
+      })
+    );
   },
 
   deleteAnimal: async (animalId) => {
@@ -789,6 +897,35 @@ export const useStore = create<State>()((set, get) => ({
     );
   },
 
+  updateEquipment: async (equipmentId, name, unit) => {
+    const { name: actorName } = actor();
+    const prev = get().equipment;
+    const eq = prev.find((e) => e.id === equipmentId);
+    if (!eq) return;
+
+    set((s) => ({ equipment: s.equipment.map((e) => (e.id === equipmentId ? { ...e, name, unit } : e)) }));
+
+    const { error } = await supabase.from('equipment').update({ name, unit }).eq('id', equipmentId);
+    if (error) {
+      set({ equipment: prev });
+      reportError('save that change', error);
+      return;
+    }
+    await supabase
+      .from('audit_log')
+      .insert(auditRow({ actor: actorName, kind: 'Equipment edited', refType: 'equipment', refId: equipmentId, business: 'General', summary: `${name} — record edited`, dateOccurred: localDateString() }));
+  },
+
+  deleteEquipment: async (equipmentId) => {
+    const prev = get().equipment;
+    set((s) => ({ equipment: removeById(s.equipment, equipmentId) }));
+    const { error } = await supabase.from('equipment').delete().eq('id', equipmentId);
+    if (error) {
+      set({ equipment: prev });
+      reportError('delete that equipment', error);
+    }
+  },
+
   addFeedback: async (who, text) => {
     const { id: authorUserId } = actor();
     const id = makeId();
@@ -803,6 +940,35 @@ export const useStore = create<State>()((set, get) => ({
       return;
     }
     await supabase.from('audit_log').insert(auditRow({ actor: who, kind: 'Feedback', refType: 'feedback', refId: id, business: 'General', summary: `Feedback — ${text}`, dateOccurred: dateStr }));
+  },
+
+  updateFeedback: async (feedbackId, text) => {
+    const { name: actorName } = actor();
+    const prev = get().feedback;
+    const fb = prev.find((f) => f.id === feedbackId);
+    if (!fb) return;
+
+    set((s) => ({ feedback: s.feedback.map((f) => (f.id === feedbackId ? { ...f, text } : f)) }));
+
+    const { error } = await supabase.from('feedback').update({ text }).eq('id', feedbackId);
+    if (error) {
+      set({ feedback: prev });
+      reportError('save that change', error);
+      return;
+    }
+    await supabase
+      .from('audit_log')
+      .insert(auditRow({ actor: actorName, kind: 'Feedback edited', refType: 'feedback', refId: feedbackId, business: 'General', summary: `Feedback edited — ${text}`, dateOccurred: localDateString() }));
+  },
+
+  deleteFeedback: async (feedbackId) => {
+    const prev = get().feedback;
+    set((s) => ({ feedback: removeById(s.feedback, feedbackId) }));
+    const { error } = await supabase.from('feedback').delete().eq('id', feedbackId);
+    if (error) {
+      set({ feedback: prev });
+      reportError('delete that feedback', error);
+    }
   },
 
   addDoc: async (input) => {
@@ -902,6 +1068,21 @@ export const useStore = create<State>()((set, get) => ({
   setUserRole: async (userId, role) => {
     const { error } = await supabase.rpc('set_user_role', { target: userId, new_role: role });
     return { error: error?.message ?? null };
+  },
+
+  removeFamilyMember: async (userId) => {
+    const { error } = await supabase.rpc('remove_family_member', { target: userId });
+    return { error: error?.message ?? null };
+  },
+
+  cancelInvite: async (email) => {
+    const prev = get().pendingInvites;
+    set((s) => ({ pendingInvites: s.pendingInvites.filter((i) => i.email !== email) }));
+    const { error } = await supabase.from('pending_invites').delete().eq('email', email);
+    if (error) {
+      set({ pendingInvites: prev });
+      reportError('cancel that invite', error);
+    }
   },
 
   setAuction: (key) => set({ selectedAuctionKey: key }),

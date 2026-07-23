@@ -2,13 +2,14 @@ import { Text, StyleSheet } from 'react-native';
 import { colors } from '@/theme/tokens';
 import { fonts } from '@/theme/typography';
 
-export type BadgeTone = 'ok' | 'action' | 'sold' | 'butchered' | 'pet' | 'new' | 'planned' | 'done';
+export type BadgeTone = 'ok' | 'action' | 'sold' | 'butchered' | 'dead' | 'pet' | 'new' | 'planned' | 'done';
 
 const TONE_STYLES: Record<BadgeTone, { bg: string; fg: string }> = {
   ok: { bg: colors.primaryTint2, fg: '#4a6b2e' },
   action: { bg: colors.alertTint, fg: colors.alertAccent },
   sold: { bg: colors.soldTint, fg: colors.soldAccent },
   butchered: { bg: colors.butcherTint, fg: colors.butcherBrown },
+  dead: { bg: colors.deadTint, fg: colors.deadAccent },
   pet: { bg: colors.petChipBg, fg: colors.petAccent },
   new: { bg: '#e8eef5', fg: '#2a63a8' },
   planned: { bg: '#f7ecd4', fg: '#8a6a1e' },

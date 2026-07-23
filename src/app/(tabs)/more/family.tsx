@@ -13,13 +13,18 @@ const ROLE_BG: Record<Role, string> = { admin: colors.primary, member: colors.mu
 const ROLES: Role[] = ['admin', 'member', 'kid'];
 
 export default function FamilyMembersScreen() {
-  const profiles = useStore((s) => s.profiles);
+  const allProfiles = useStore((s) => s.profiles);
+  const profiles = allProfiles.filter((p) => !p.removedAt);
+  const pendingInvites = useStore((s) => s.pendingInvites);
   const invite = useStore((s) => s.invite);
   const setUserRole = useStore((s) => s.setUserRole);
+  const cancelInvite = useStore((s) => s.cancelInvite);
+  const removeFamilyMember = useStore((s) => s.removeFamilyMember);
   const currentUser = useProfile();
   const isAdmin = currentUser.role === 'admin';
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('member');
   const [message, setMessage] = useState('');
@@ -38,6 +43,17 @@ export default function FamilyMembersScreen() {
   const changeRole = async (userId: string, role: Role) => {
     const { error } = await setUserRole(userId, role);
     if (error) setMessage(`Couldn't change role: ${error}`);
+    setEditingId(null);
+  };
+
+  const removeMember = async (userId: string, name: string) => {
+    const { error } = await removeFamilyMember(userId);
+    if (error) {
+      setMessage(`Couldn't remove ${name}: ${error}`);
+    } else {
+      setMessage(`✓ ${name} has been removed and can no longer sign in.`);
+    }
+    setRemovingId(null);
     setEditingId(null);
   };
 
@@ -74,14 +90,60 @@ export default function FamilyMembersScreen() {
             />
             {editingId === p.id && (
               <View style={[styles.roleEditor, i < profiles.length - 1 && styles.divider]}>
-                {ROLES.map((r) => (
-                  <Chip key={r} label={ROLE_LABEL[r]} selected={r === p.role} onPress={() => changeRole(p.id, r)} />
-                ))}
+                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                  {ROLES.map((r) => (
+                    <Chip key={r} label={ROLE_LABEL[r]} selected={r === p.role} onPress={() => changeRole(p.id, r)} />
+                  ))}
+                </View>
+                {p.id !== currentUser.id && (
+                  <View style={{ marginTop: 10 }}>
+                    {removingId === p.id ? (
+                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        <Pressable onPress={() => removeMember(p.id, p.name)} style={styles.confirmRemoveBtn}>
+                          <Text style={styles.confirmRemoveLabel}>Confirm remove {p.name}</Text>
+                        </Pressable>
+                        <Pressable onPress={() => setRemovingId(null)} hitSlop={8}>
+                          <Text style={styles.cancelRemoveLabel}>Cancel</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <Pressable onPress={() => setRemovingId(p.id)} hitSlop={8}>
+                        <Text style={styles.removeLabel}>Remove from family</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
               </View>
             )}
           </View>
         ))}
       </Card>
+
+      {isAdmin && pendingInvites.length > 0 && (
+        <>
+          <Text style={styles.sectionLabel}>Pending invites</Text>
+          <Card>
+            {pendingInvites.map((inv, i) => (
+              <Row
+                key={inv.email}
+                title={inv.email}
+                sub={`Invited as ${ROLE_LABEL[inv.role]}`}
+                showDivider={i < pendingInvites.length - 1}
+                trailing={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View style={[styles.roleChip, { backgroundColor: colors.faint }]}>
+                      <Text style={styles.roleChipLabel}>Pending</Text>
+                    </View>
+                    <Pressable onPress={() => cancelInvite(inv.email)} hitSlop={8}>
+                      <Text style={{ color: colors.faint, fontSize: 15 }}>✕</Text>
+                    </Pressable>
+                  </View>
+                }
+              />
+            ))}
+          </Card>
+        </>
+      )}
 
       {isAdmin && (
         <>
@@ -126,7 +188,11 @@ const styles = StyleSheet.create({
   },
   roleChip: { borderRadius: 14, paddingVertical: 5, paddingHorizontal: 12 },
   roleChipLabel: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  roleEditor: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 14, flexWrap: 'wrap' },
+  roleEditor: { paddingHorizontal: 16, paddingBottom: 14 },
+  removeLabel: { fontSize: 12, fontWeight: '700', color: colors.danger },
+  confirmRemoveBtn: { backgroundColor: colors.danger, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
+  confirmRemoveLabel: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  cancelRemoveLabel: { fontSize: 12, fontWeight: '600', color: colors.muted },
   divider: { borderBottomWidth: 1, borderBottomColor: colors.divider },
   inviteCard: { padding: 14 },
   input: {

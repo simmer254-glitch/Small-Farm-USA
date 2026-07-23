@@ -7,16 +7,24 @@ export type User = {
   name: string;
   email: string;
   role: Role;
+  removedAt?: string;
+};
+
+export type PendingInvite = {
+  email: string;
+  role: Role;
+  invitedBy?: string;
+  createdAt: string;
 };
 
 export type AnimalClass = 'livestock' | 'pet';
 export type LivestockSpecies = 'cattle' | 'pig' | 'chicken';
 export type PetSpecies = 'dog' | 'cat' | 'horse';
 export type Species = LivestockSpecies | PetSpecies;
-export type AnimalStatus = 'active' | 'sold' | 'butchered';
+export type AnimalStatus = 'active' | 'sold' | 'butchered' | 'dead';
 export type Business = 'Cattle' | 'Poultry' | 'Hogs' | 'General';
 
-export type AnimalEventType = 'born' | 'tag' | 'weight' | 'vax' | 'note' | 'sold' | 'butchered';
+export type AnimalEventType = 'born' | 'tag' | 'weight' | 'vax' | 'note' | 'sold' | 'butchered' | 'dead';
 
 export type AnimalEvent = {
   id: string;

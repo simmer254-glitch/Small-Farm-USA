@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Text, View, Pressable, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -58,23 +58,40 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export default function AddAnimalScreen() {
+  const params = useLocalSearchParams<{ id?: string }>();
+  const animals = useStore((s) => s.animals);
+  const editing = params.id ? animals.find((a) => a.id === params.id) : undefined;
   const addAnimal = useStore((s) => s.addAnimal);
+  const updateAnimal = useStore((s) => s.updateAnimal);
   const [saved, setSaved] = useState(false);
 
   const { control, handleSubmit, watch, setValue, reset } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      cls: 'livestock',
-      species: 'cattle',
-      sex: 'Heifer',
-      tag: '',
-      name: '',
-      born: todayIso(),
-      birthWeight: '',
-      color: '',
-      dam: '',
-      count: '',
-    },
+    defaultValues: editing
+      ? {
+          cls: editing.cls,
+          species: editing.species,
+          sex: editing.sex,
+          tag: editing.tag,
+          name: editing.name,
+          born: editing.born,
+          birthWeight: '',
+          color: editing.color === '—' ? '' : editing.color,
+          dam: editing.dam === '—' ? '' : editing.dam,
+          count: editing.count > 1 ? String(editing.count) : '',
+        }
+      : {
+          cls: 'livestock',
+          species: 'cattle',
+          sex: 'Heifer',
+          tag: '',
+          name: '',
+          born: todayIso(),
+          birthWeight: '',
+          color: '',
+          dam: '',
+          count: '',
+        },
   });
 
   const cls = watch('cls');
@@ -102,6 +119,13 @@ export default function AddAnimalScreen() {
           born: data.born,
           color: data.color?.trim() || '',
         };
+
+    if (editing) {
+      updateAnimal(editing.id, input);
+      router.push(`/animals/${editing.id}`);
+      return;
+    }
+
     addAnimal(input);
     setSaved(true);
     reset({
@@ -117,10 +141,10 @@ export default function AddAnimalScreen() {
 
   return (
     <Screen>
-      <Text style={styles.backLink} onPress={() => router.push('/animals')}>
+      <Text style={styles.backLink} onPress={() => router.push(editing ? `/animals/${editing.id}` : '/animals')}>
         ‹ Cancel
       </Text>
-      <Text style={styles.title}>New animal</Text>
+      <Text style={styles.title}>{editing ? 'Edit animal' : 'New animal'}</Text>
       <Text style={styles.helper}>Big buttons — easy one-handed at the barn.</Text>
 
       <Text style={styles.fieldGroupLabel}>TYPE</Text>
@@ -138,7 +162,7 @@ export default function AddAnimalScreen() {
               }
             }}
             style={[styles.toggleOpt, cls === k ? styles.optSelected : styles.optUnselected]}>
-            <Text style={styles.toggleLabel}>{k === 'livestock' ? '🐄 Livestock' : '🐕 Pet / working'}</Text>
+            <Text style={styles.toggleLabel}>{k === 'livestock' ? '🐄 Livestock' : '🐕 Pet'}</Text>
           </Pressable>
         ))}
       </View>
@@ -184,14 +208,16 @@ export default function AddAnimalScreen() {
             <TextField control={control} name="tag" label="TAG #" placeholder="e.g. 214" style={styles.gridCell} />
             <TextField control={control} name="name" label="NAME (OPTIONAL)" placeholder="e.g. Daisy" style={styles.gridCell} />
             <DateField control={control} name="born" label="BORN" style={styles.gridCell} />
-            <TextField
-              control={control}
-              name="birthWeight"
-              label="BIRTH WEIGHT (LB, OPT.)"
-              placeholder="75"
-              keyboardType="numeric"
-              style={styles.gridCell}
-            />
+            {!editing && (
+              <TextField
+                control={control}
+                name="birthWeight"
+                label="BIRTH WEIGHT (LB, OPT.)"
+                placeholder="75"
+                keyboardType="numeric"
+                style={styles.gridCell}
+              />
+            )}
             <TextField control={control} name="color" label="COLOR / MARKINGS" placeholder="Black, white face" style={styles.gridCell} />
             <TextField control={control} name="dam" label="DAM (MOTHER)" placeholder="Tag # of dam" style={styles.gridCell} />
             <TextField
@@ -232,7 +258,7 @@ export default function AddAnimalScreen() {
         </>
       )}
 
-      <PrimaryButton label="Save animal" onPress={handleSubmit(onSubmit)} style={styles.saveButton} />
+      <PrimaryButton label={editing ? 'Save changes' : 'Save animal'} onPress={handleSubmit(onSubmit)} style={styles.saveButton} />
       {saved && <Text style={styles.savedText}>✓ Saved — added to the herd list</Text>}
     </Screen>
   );

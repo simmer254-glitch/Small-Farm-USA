@@ -147,7 +147,7 @@ function AdminMemberHome() {
             ))}
           </View>
 
-          <SectionLabel label="This year so far" action={{ label: 'Schedule F ›', onPress: () => router.push('/more/money') }} />
+          <SectionLabel label="This year so far" action={{ label: 'Farm Finances ›', onPress: () => router.push('/more/money') }} />
           <Card onPress={() => router.push('/more/money')} style={styles.ytdCard}>
             <View style={styles.ytdCell}>
               <Text style={styles.ytdLabel}>Income</Text>

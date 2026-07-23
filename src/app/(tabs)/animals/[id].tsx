@@ -24,6 +24,7 @@ export default function AnimalDetailScreen() {
   const addAnimalEvent = useStore((s) => s.addAnimalEvent);
   const markSold = useStore((s) => s.markSold);
   const markButchered = useStore((s) => s.markButchered);
+  const markDead = useStore((s) => s.markDead);
   const deleteAnimal = useStore((s) => s.deleteAnimal);
 
   const [logType, setLogType] = useState<LogType | null>(null);
@@ -50,7 +51,7 @@ export default function AnimalDetailScreen() {
   const isKid = currentUser.role === 'kid';
 
   const subtitle = isPet
-    ? `Pet / working animal · born ${animal.born}`
+    ? `Pet · born ${animal.born}`
     : `${animal.count > 1 ? `Lot of ${animal.count} · ` : ''}${animal.sex} · born ${animal.born} · dam ${animal.dam} · ${animal.status}`;
 
   const logButtons: { key: LogType; label: string }[] = [
@@ -68,9 +69,16 @@ export default function AnimalDetailScreen() {
 
   return (
     <Screen>
-      <Text style={styles.backLink} onPress={() => router.push('/animals')}>
-        ‹ All animals
-      </Text>
+      <View style={styles.topRow}>
+        <Text style={styles.backLink} onPress={() => router.push('/animals')}>
+          ‹ All animals
+        </Text>
+        {isAdmin && (
+          <Text style={styles.editLink} onPress={() => router.push(`/animals/add?id=${animal.id}`)}>
+            Edit ›
+          </Text>
+        )}
+      </View>
 
       <Card style={styles.headerCard}>
         <View style={styles.headerRow}>
@@ -189,12 +197,15 @@ export default function AnimalDetailScreen() {
               </Pressable>
             </View>
           )}
+          <Pressable onPress={() => markDead(animal.id)} style={[styles.deadButton, { backgroundColor: colors.deadAccent }]}>
+            <Text style={styles.saleButtonLabel}>Mark dead</Text>
+          </Pressable>
         </>
       )}
 
       {isPet && (
         <View style={styles.petBanner}>
-          <Text style={styles.petBannerText}>🐾 Pet / working animal — never sold or eaten. No lifecycle tracking.</Text>
+          <Text style={styles.petBannerText}>🐾 Pet — never sold or eaten. No lifecycle tracking.</Text>
         </View>
       )}
 
@@ -215,7 +226,9 @@ export default function AnimalDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  backLink: { fontSize: 13, color: colors.primary, fontWeight: '600', marginBottom: 12 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  backLink: { fontSize: 13, color: colors.primary, fontWeight: '600' },
+  editLink: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   headerCard: { padding: 18 },
   headerRow: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   avatar: {
@@ -270,6 +283,7 @@ const styles = StyleSheet.create({
   saleButtonLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
   sellForm: { backgroundColor: '#fff', borderRadius: 14, padding: 12, marginTop: 10 },
   confirmSaleButton: { backgroundColor: colors.primary, borderRadius: radii.inputSm, padding: 12, alignItems: 'center', marginTop: 8 },
+  deadButton: { borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 8 },
   petBanner: {
     backgroundColor: colors.petBg,
     borderWidth: 1,

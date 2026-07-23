@@ -76,11 +76,12 @@ export function suggestionFor(animal: Animal, now: number | Date = Date.now()): 
   return null;
 }
 
-export type AnimalBadgeTone = 'ok' | 'action' | 'sold' | 'butchered';
+export type AnimalBadgeTone = 'ok' | 'action' | 'sold' | 'butchered' | 'dead';
 
 export function animalBadgeTone(animal: Animal, now: number | Date = Date.now()): AnimalBadgeTone {
   if (animal.status === 'sold') return 'sold';
   if (animal.status === 'butchered') return 'butchered';
+  if (animal.status === 'dead') return 'dead';
   if (suggestionFor(animal, now)) return 'action';
   return 'ok';
 }

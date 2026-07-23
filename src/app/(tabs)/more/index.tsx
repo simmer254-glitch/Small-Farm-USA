@@ -21,7 +21,11 @@ export default function MoreScreen() {
   const currentUser = useProfile();
   const addEquipment = useStore((s) => s.addEquipment);
   const updateEquipmentService = useStore((s) => s.updateEquipmentService);
+  const updateEquipment = useStore((s) => s.updateEquipment);
+  const deleteEquipment = useStore((s) => s.deleteEquipment);
   const addFeedback = useStore((s) => s.addFeedback);
+  const updateFeedback = useStore((s) => s.updateFeedback);
+  const deleteFeedback = useStore((s) => s.deleteFeedback);
   const signOut = useAuthStore((s) => s.signOut);
   const connected = useOneDriveStore((s) => s.connected);
   const lastSyncAt = useOneDriveStore((s) => s.lastSyncAt);
@@ -36,8 +40,13 @@ export default function MoreScreen() {
   const [eqEditId, setEqEditId] = useState<string | null>(null);
   const [eqEditHours, setEqEditHours] = useState('');
   const [eqEditNote, setEqEditNote] = useState('');
+  const [eqRenameId, setEqRenameId] = useState<string | null>(null);
+  const [eqRenameName, setEqRenameName] = useState('');
+  const [eqRenameUnit, setEqRenameUnit] = useState('');
 
   const [fbDraft, setFbDraft] = useState('');
+  const [fbEditId, setFbEditId] = useState<string | null>(null);
+  const [fbEditText, setFbEditText] = useState('');
   const [seedMsg, setSeedMsg] = useState('');
   const [seeding, setSeeding] = useState(false);
 
@@ -70,7 +79,9 @@ export default function MoreScreen() {
     setFbDraft('');
   };
 
-  const canManageOneDrive = currentUser.role === 'admin' && Platform.OS === 'web';
+  const isAdmin = currentUser.role === 'admin';
+  const isMemberOrAdmin = currentUser.role !== 'kid';
+  const canManageOneDrive = isAdmin && Platform.OS === 'web';
   const oneDriveLabel = syncing
     ? 'Syncing…'
     : lastSyncError
@@ -98,7 +109,7 @@ export default function MoreScreen() {
               <Text style={{ color: '#fff', fontWeight: '800' }}>$</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.moneyTitle}>Money · Schedule F</Text>
+              <Text style={styles.moneyTitle}>Farm Finances</Text>
               <Text style={styles.moneySub}>{moneyTeaser}</Text>
             </View>
             <Text style={{ color: colors.darkCardMuted2 }}>›</Text>
@@ -153,17 +164,64 @@ export default function MoreScreen() {
                 sub={`${eq.hours} ${eq.unit}${eq.lastService ? ` · ${eq.lastService}` : ' · no service logged yet'}`}
                 showDivider={false}
                 trailing={
-                  <Pressable
-                    onPress={() => {
-                      setEqEditId((id) => (id === eq.id ? null : eq.id));
-                      setEqEditHours('');
-                      setEqEditNote('');
-                    }}
-                    style={styles.updateBtn}>
-                    <Text style={styles.updateBtnLabel}>Update</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Pressable
+                      onPress={() => {
+                        setEqEditId((id) => (id === eq.id ? null : eq.id));
+                        setEqEditHours('');
+                        setEqEditNote('');
+                      }}
+                      style={styles.updateBtn}>
+                      <Text style={styles.updateBtnLabel}>Update</Text>
+                    </Pressable>
+                    {isMemberOrAdmin && (
+                      <Pressable
+                        onPress={() => {
+                          setEqRenameId((id) => (id === eq.id ? null : eq.id));
+                          setEqRenameName(eq.name);
+                          setEqRenameUnit(eq.unit);
+                        }}
+                        hitSlop={8}>
+                        <Text style={{ fontSize: 14 }}>✏️</Text>
+                      </Pressable>
+                    )}
+                    {isAdmin && (
+                      <Pressable onPress={() => deleteEquipment(eq.id)} hitSlop={8}>
+                        <Text style={{ color: colors.faint, fontSize: 15 }}>✕</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 }
               />
+              {eqRenameId === eq.id && (
+                <View style={styles.eqEditForm}>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TextInput
+                      value={eqRenameName}
+                      onChangeText={setEqRenameName}
+                      placeholder="Equipment name"
+                      placeholderTextColor={colors.faint}
+                      style={[styles.input, { flex: 1 }]}
+                    />
+                    <TextInput
+                      value={eqRenameUnit}
+                      onChangeText={setEqRenameUnit}
+                      placeholder="Unit, e.g. hrs/mi"
+                      placeholderTextColor={colors.faint}
+                      style={[styles.input, { width: 110 }]}
+                    />
+                  </View>
+                  <Pressable
+                    onPress={() => {
+                      if (!eqRenameName.trim()) return;
+                      updateEquipment(eq.id, eqRenameName.trim(), eqRenameUnit.trim() || eq.unit);
+                      setEqRenameId(null);
+                    }}
+                    style={styles.formSaveBtn}>
+                    <Text style={styles.formSaveLabel}>Save changes</Text>
+                  </Pressable>
+                </View>
+              )}
               {eqEditId === eq.id && (
                 <View style={styles.eqEditForm}>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -214,9 +272,47 @@ export default function MoreScreen() {
                   <Text style={styles.feedbackWho}>
                     {fb.who} <Text style={styles.feedbackDate}>· {fb.date}</Text>
                   </Text>
-                  <Badge label={fb.status} tone={FEEDBACK_BADGE[fb.status]} />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Badge label={fb.status} tone={FEEDBACK_BADGE[fb.status]} />
+                    {isMemberOrAdmin && (
+                      <Pressable
+                        onPress={() => {
+                          setFbEditId((id) => (id === fb.id ? null : fb.id));
+                          setFbEditText(fb.text);
+                        }}
+                        hitSlop={8}>
+                        <Text style={{ fontSize: 14 }}>✏️</Text>
+                      </Pressable>
+                    )}
+                    {isAdmin && (
+                      <Pressable onPress={() => deleteFeedback(fb.id)} hitSlop={8}>
+                        <Text style={{ color: colors.faint, fontSize: 15 }}>✕</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
-                <Text style={styles.feedbackText}>{fb.text}</Text>
+                {fbEditId === fb.id ? (
+                  <View style={{ gap: 8, marginTop: 6 }}>
+                    <TextInput
+                      value={fbEditText}
+                      onChangeText={setFbEditText}
+                      placeholderTextColor={colors.faint}
+                      style={styles.input}
+                      multiline
+                    />
+                    <Pressable
+                      onPress={() => {
+                        if (!fbEditText.trim()) return;
+                        updateFeedback(fb.id, fbEditText.trim());
+                        setFbEditId(null);
+                      }}
+                      style={styles.formSaveBtn}>
+                      <Text style={styles.formSaveLabel}>Save changes</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Text style={styles.feedbackText}>{fb.text}</Text>
+                )}
               </View>
             ))}
           </View>

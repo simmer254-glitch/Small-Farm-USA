@@ -17,6 +17,7 @@ export const ANIMAL_EVENT_ICON: Record<AnimalEventType, string> = {
   note: '📝',
   sold: '💵',
   butchered: '🥩',
+  dead: '⚰️',
 };
 
 export const TASK_TYPE_ICON: Record<TaskType, string> = {

@@ -39,6 +39,9 @@ export const colors = {
   soldTint: '#e8e4f0',
   soldAccent: '#5b4a8a',
 
+  deadTint: '#e6e6e6',
+  deadAccent: '#4a4a4a',
+
   // Pets & working animals — visually distinct blue family
   petBg: '#f3f6fa',
   petBorder: '#dde6f0',
